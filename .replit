@@ -2,7 +2,7 @@ modules = ["web", "python-3.11", "nodejs-20", "java-graalvm22.3", "postgresql-16
 
 [nix]
 channel = "stable-25_05"
-packages = ["openssl", "postgresql", "unixODBC"]
+packages = ["freetype", "lcms2", "libimagequant", "libjpeg", "libtiff", "libwebp", "libxcrypt", "openjpeg", "openssl", "postgresql", "tcl", "tk", "unixODBC", "zlib"]
 
 [deployment]
 deploymentTarget = "autoscale"

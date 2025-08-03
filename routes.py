@@ -4,6 +4,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import logging
 import json
+from barcode_generator import BarcodeGenerator
 
 from app import app, db, login_manager
 from models import User, GRPODocument, GRPOItem, InventoryTransfer, InventoryTransferItem, PickList, PickListItem, InventoryCount, InventoryCountItem, BarcodeLabel, BinScanningLog, DocumentNumberSeries, QRCodeLabel
@@ -1316,6 +1317,57 @@ def reject_pick_list(pick_list_id):
     else:
         return jsonify({'success': False, 'message': 'You do not have permission to reject pick lists'}), 403
 
+# Removed duplicate edit_transfer_item route - kept the one below
+
+@app.route('/api/generate-qr', methods=['POST'])
+@login_required
+def generate_qr_code():
+    """Generate QR code for labels"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+        
+        generator = BarcodeGenerator()
+        
+        # Check if it's a label QR or simple QR
+        if 'label_data' in data:
+            result = generator.generate_label_qr(data['label_data'])
+        else:
+            qr_text = data.get('text', '')
+            if not qr_text:
+                return jsonify({'success': False, 'error': 'QR text required'}), 400
+            
+            size = data.get('size', 300)
+            result = generator.generate_qr_code(qr_text, size=size)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logging.error(f"Error generating QR code: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/parse-qr', methods=['POST'])
+@login_required
+def parse_qr_code():
+    """Parse scanned QR code"""
+    try:
+        data = request.get_json()
+        qr_text = data.get('text', '')
+        
+        if not qr_text:
+            return jsonify({'success': False, 'error': 'QR text required'}), 400
+        
+        generator = BarcodeGenerator()
+        result = generator.parse_scanned_qr(qr_text)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logging.error(f"Error parsing QR code: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/inventory_counting')
 @login_required
 def inventory_counting():
@@ -1437,9 +1489,9 @@ def test_bin_scanning(bin_code):
         })
 
 # QR Code Generation API Routes
-@app.route('/api/generate-qr-code', methods=['POST'])
+@app.route('/api/generate-label-qr', methods=['POST'])
 @login_required
-def generate_qr_code():
+def generate_label_qr():
     """Generate QR code for GRN items"""
     try:
         data = request.get_json()

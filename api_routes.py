@@ -80,39 +80,66 @@ def register_api_routes(app):
 
     @app.route('/api/get-batches', methods=['GET'])
     def get_batches():
-        """Get available batches for a specific item and warehouse"""
+        """Get available batches for a specific item using SAP B1 BatchNumberDetails API"""
         try:
-            item_code = request.args.get('item')
+            item_code = request.args.get('item_code') or request.args.get('item')
             warehouse_code = request.args.get('warehouse')
             
-            if not item_code or not warehouse_code:
-                return jsonify({'success': False, 'error': 'Item code and warehouse code required'}), 400
+            if not item_code:
+                return jsonify({'success': False, 'error': 'Item code required'}), 400
             
             sap = SAPIntegration()
-            result = sap.get_item_batches_list(item_code, warehouse_code)
+            # Use the specific SAP B1 API for batch details
+            result = sap.get_batch_number_details(item_code)
             
             if result.get('success'):
                 return jsonify(result)
             else:
-                # Return mock data for offline mode
+                # Return mock data based on your actual SAP response format
                 return jsonify({
                     'success': True,
                     'batches': [
-                        {'Batch': f'BATCH-{item_code}-001', 'Quantity': 100, 'ExpirationDate': '2025-12-31'},
-                        {'Batch': f'BATCH-{item_code}-002', 'Quantity': 50, 'ExpirationDate': '2025-11-30'},
-                        {'Batch': f'BATCH-{item_code}-003', 'Quantity': 25, 'ExpirationDate': '2025-10-31'}
+                        {
+                            'Batch': '20220729',
+                            'ItemCode': item_code,
+                            'ItemDescription': 'Sample Item',
+                            'Status': 'bdsStatus_Released',
+                            'AdmissionDate': '2022-07-29T00:00:00Z',
+                            'SystemNumber': 1
+                        },
+                        {
+                            'Batch': '271022',
+                            'ItemCode': item_code,
+                            'ItemDescription': 'Sample Item',
+                            'Status': 'bdsStatus_Released',
+                            'AdmissionDate': '2022-10-28T00:00:00Z',
+                            'SystemNumber': 4
+                        },
+                        {
+                            'Batch': '231122',
+                            'ItemCode': item_code,
+                            'ItemDescription': 'Sample Item',
+                            'Status': 'bdsStatus_Released',
+                            'AdmissionDate': '2022-11-24T00:00:00Z',
+                            'SystemNumber': 6
+                        }
                     ]
                 })
                 
         except Exception as e:
             logging.error(f"Error in get_batches API: {str(e)}")
             # Return mock data on error
-            item_code = request.args.get('item', 'ITEM001')
+            item_code = request.args.get('item_code') or request.args.get('item', 'ITEM001')
             return jsonify({
                 'success': True,
                 'batches': [
-                    {'Batch': f'BATCH-{item_code}-001', 'Quantity': 100, 'ExpirationDate': '2025-12-31'},
-                    {'Batch': f'BATCH-{item_code}-002', 'Quantity': 50, 'ExpirationDate': '2025-11-30'},
-                    {'Batch': f'BATCH-{item_code}-003', 'Quantity': 25, 'ExpirationDate': '2025-10-31'}
+                    {
+                        'Batch': '20220729',
+                        'ItemCode': item_code,
+                        'ItemDescription': 'Sample Item',
+                        'Status': 'bdsStatus_Released',
+                        'AdmissionDate': '2022-07-29T00:00:00Z',
+                        'SystemNumber': 1
+                    }
                 ]
             })

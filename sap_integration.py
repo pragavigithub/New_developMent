@@ -713,6 +713,45 @@ class SAPIntegration:
                 f"Error getting bin AbsEntry for {bin_code}: {str(e)}")
             return None
 
+    def get_batch_number_details(self, item_code):
+        """Get batch number details for a specific item using SAP B1 API - exact endpoint from user"""
+        try:
+            if not self.session_id:
+                login_result = self.login()
+                if not login_result:
+                    return {'success': False, 'error': 'SAP B1 login failed'}
+            
+            # Use the exact API endpoint you provided
+            url = f"{self.base_url}/BatchNumberDetails"
+            params = {
+                '$filter': f"ItemCode eq '{item_code}'"
+            }
+            
+            headers = {
+                'Content-Type': 'application/json',
+                'Cookie': f'B1SESSION={self.session_id}'
+            }
+            
+            logging.info(f"🔍 Fetching batch details for item {item_code} from SAP B1")
+            response = requests.get(url, headers=headers, params=params, verify=False, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                batches = data.get('value', [])
+                
+                logging.info(f"✅ Found {len(batches)} batches for item {item_code}")
+                return {
+                    'success': True,
+                    'batches': batches
+                }
+            else:
+                logging.error(f"❌ Error fetching batch details: {response.status_code} - {response.text}")
+                return {'success': False, 'error': f'HTTP {response.status_code}'}
+                
+        except Exception as e:
+            logging.error(f"Error getting batch number details: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def get_batch_numbers(self, item_code):
         """Get batch numbers for specific item from SAP B1 BatchNumberDetails"""
         # Check cache first

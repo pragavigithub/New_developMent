@@ -22,4 +22,6 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "mysql-connector-python>=9.3.0",
     "pymysql>=1.1.1",
+    "qrcode>=8.2",
+    "pillow>=11.3.0",
 ]
