@@ -302,7 +302,7 @@
                             <div class="mb-3">
                                 <label for="from_warehouse" class="form-label">From Warehouse <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="from_warehouse" name="from_warehouse" value="{{ transfer.from_warehouse or '' }}" required onchange="handleWarehouseChange('from')">
+                                    <input type="text" class="form-control" id="from_warehouse" name="from_warehouse" value="{{ transfer.from_warehouse or '' }}" required onchange="onWarehouseInputChange('from')" onblur="onWarehouseInputChange('from')">
                                     <button class="btn btn-outline-secondary" type="button" onclick="scanWarehouse('from')" title="Scan warehouse">
                                         <i data-feather="camera"></i> Scan
                                     </button>
@@ -313,7 +313,7 @@
                             <div class="mb-3">
                                 <label for="to_warehouse" class="form-label">To Warehouse <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="to_warehouse" name="to_warehouse" value="{{ transfer.to_warehouse or '' }}" required onchange="handleWarehouseChange('to')">
+                                    <input type="text" class="form-control" id="to_warehouse" name="to_warehouse" value="{{ transfer.to_warehouse or '' }}" required onchange="onWarehouseInputChange('to')" onblur="onWarehouseInputChange('to')">
                                     <button class="btn btn-outline-secondary" type="button" onclick="scanWarehouse('to')" title="Scan warehouse">
                                         <i data-feather="camera"></i> Scan
                                     </button>
@@ -405,10 +405,26 @@ function handleWarehouseChange(type) {
     const warehouseField = document.getElementById(type + '_warehouse');
     const binSelect = document.getElementById(type + '_bin_select');
     
-    if (warehouseField.value) {
+    if (warehouseField && warehouseField.value) {
+        loadBinLocations(warehouseField.value, type);
+        if (binSelect) {
+            binSelect.disabled = false;
+        }
+    } else if (binSelect) {
+        binSelect.disabled = true;
+        binSelect.innerHTML = '<option value="">Select warehouse first...</option>';
+    }
+}
+
+// Load bins when warehouse input changes
+function onWarehouseInputChange(type) {
+    const warehouseField = document.getElementById(type + '_warehouse');
+    const binSelect = document.getElementById(type + '_bin_select');
+    
+    if (warehouseField && warehouseField.value && binSelect) {
         loadBinLocations(warehouseField.value, type);
         binSelect.disabled = false;
-    } else {
+    } else if (binSelect) {
         binSelect.disabled = true;
         binSelect.innerHTML = '<option value="">Select warehouse first...</option>';
     }
@@ -447,6 +463,9 @@ function loadBinLocations(warehouseCode, type) {
                     option.textContent = `${bin.BinCode || bin.bin_code}${bin.Description ? ' - ' + bin.Description : ''}`;
                     binSelect.appendChild(option);
                 });
+                console.log(`Loaded ${data.bins.length} bins for warehouse ${warehouseCode}`);
+            } else {
+                console.warn('No bins found for warehouse:', warehouseCode);
             }
         })
         .catch(error => {
@@ -492,10 +511,18 @@ function handleBatchSelection() {
 
 // Load batch numbers based on item code
 function loadBatchNumbers() {
-    const itemCode = document.getElementById('item_code').value;
-    const fromWarehouse = document.getElementById('from_warehouse').value;
+    const itemCodeField = document.getElementById('item_code');
+    const fromWarehouseField = document.getElementById('from_warehouse');
     const batchSelect = document.getElementById('batch_select');
     const batchInfo = document.getElementById('batch_info');
+    
+    if (!itemCodeField || !batchSelect || !batchInfo) {
+        console.error('Required elements for batch loading not found');
+        return;
+    }
+    
+    const itemCode = itemCodeField.value;
+    const fromWarehouse = fromWarehouseField ? fromWarehouseField.value : '';
     
     if (!itemCode) {
         batchSelect.innerHTML = '<option value="">Select Item Code first...</option>';
@@ -524,10 +551,10 @@ function loadBatchNumbers() {
             if (data.success && data.batches && data.batches.length > 0) {
                 data.batches.forEach(batch => {
                     const option = document.createElement('option');
-                    option.value = batch.BatchNumber || batch.batch_number;
-                    option.textContent = `${batch.BatchNumber || batch.batch_number} (Qty: ${batch.Quantity || batch.quantity || 0})`;
-                    if (batch.ExpiryDate || batch.expiry_date) {
-                        option.setAttribute('data-expiry', batch.ExpiryDate || batch.expiry_date);
+                    option.value = batch.Batch || batch.BatchNumber || batch.batch_number;
+                    option.textContent = `${batch.Batch || batch.BatchNumber || batch.batch_number}`;
+                    if (batch.ExpirationDate || batch.ExpiryDate || batch.expiry_date) {
+                        option.setAttribute('data-expiry', batch.ExpirationDate || batch.ExpiryDate || batch.expiry_date);
                     }
                     batchSelect.appendChild(option);
                 });
@@ -587,12 +614,27 @@ function scanBatchNumber() {
 
 function addItemFromRequest(itemCode, itemName, quantity, uom, fromWarehouse, toWarehouse) {
     // Pre-fill the add item modal with data from the transfer request
-    document.getElementById('item_code').value = itemCode;
-    document.getElementById('item_name').value = itemName;
-    document.getElementById('quantity').value = quantity;
-    document.getElementById('unit_of_measure').value = uom;
-    document.getElementById('from_warehouse_code').value = fromWarehouse;
-    document.getElementById('to_warehouse_code').value = toWarehouse;
+    const itemCodeField = document.getElementById('item_code');
+    const itemNameField = document.getElementById('item_name');
+    const quantityField = document.getElementById('quantity');
+    const uomField = document.getElementById('unit_of_measure');
+    const fromWarehouseField = document.getElementById('from_warehouse');
+    const toWarehouseField = document.getElementById('to_warehouse');
+    
+    if (itemCodeField) itemCodeField.value = itemCode;
+    if (itemNameField) itemNameField.value = itemName;
+    if (quantityField) quantityField.value = quantity;
+    if (uomField) uomField.value = uom;
+    if (fromWarehouseField) fromWarehouseField.value = fromWarehouse;
+    if (toWarehouseField) toWarehouseField.value = toWarehouse;
+    
+    // Load bins for both warehouses
+    if (fromWarehouse) {
+        onWarehouseInputChange('from');
+    }
+    if (toWarehouse) {
+        onWarehouseInputChange('to');
+    }
     
     // Load available batches for this item
     loadBatchNumbers();

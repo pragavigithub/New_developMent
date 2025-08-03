@@ -85,13 +85,32 @@ def get_bins():
             except Exception as e:
                 logging.error(f"Error getting bins from SAP: {str(e)}")
         
-        # Return mock data for offline mode or on error
+        # Return mock data for offline mode or on error based on your SAP B1 BinLocations structure
         return jsonify({
             'success': True,
             'bins': [
-                {'BinCode': f'{warehouse_code}-BIN-01', 'BinName': 'Bin Location 01'},
-                {'BinCode': f'{warehouse_code}-BIN-02', 'BinName': 'Bin Location 02'},
-                {'BinCode': f'{warehouse_code}-BIN-03', 'BinName': 'Bin Location 03'}
+                {
+                    'AbsEntry': 1,
+                    'Warehouse': warehouse_code,
+                    'Sublevel1': 'A103',
+                    'BinCode': f'{warehouse_code}-A103',
+                    'Inactive': 'tNO',
+                    'Description': 'Bin Location A103',
+                    'BarCode': 'A103',
+                    'IsSystemBin': 'tNO',
+                    'ReceivingBinLocation': 'tYES'
+                },
+                {
+                    'AbsEntry': 2,
+                    'Warehouse': warehouse_code,
+                    'Sublevel1': 'J-830',
+                    'BinCode': f'{warehouse_code}-J-830',
+                    'Inactive': 'tNO',
+                    'Description': 'Bin Location J-830',
+                    'BarCode': 'J-830',
+                    'IsSystemBin': 'tNO',
+                    'ReceivingBinLocation': 'tYES'
+                }
             ]
         })
             
@@ -136,10 +155,10 @@ def get_batches():
                     batches = data.get('value', [])
                     logging.info(f"Raw SAP response: Retrieved {len(batches)} batches from SAP B1")
                     
-                    # Format batches for the frontend (simplified - no warehouse filtering for now)
+                    # Format batches using exact SAP B1 field names from your API response
                     formatted_batches = []
                     for batch in batches:
-                        # Use the exact field names from SAP B1 response
+                        # Use the exact field names from your SAP B1 BatchNumberDetails response
                         batch_number = batch.get('Batch', '')
                         expiry_date = batch.get('ExpirationDate', '')
                         
@@ -148,14 +167,17 @@ def get_batches():
                             expiry_date = expiry_date.split('T')[0]
                         
                         formatted_batches.append({
-                            'Batch': batch_number,
-                            'BatchNumber': batch_number,  # Support both field names
-                            'Quantity': 100,  # Default quantity since we don't have stock info
-                            'ExpirationDate': expiry_date or 'N/A',
-                            'ExpiryDate': expiry_date or 'N/A',  # Support both field names
-                            'Status': batch.get('Status', 'bdsStatus_Released'),
+                            'DocEntry': batch.get('DocEntry', ''),
                             'ItemCode': batch.get('ItemCode', item_code),
-                            'ItemDescription': batch.get('ItemDescription', '')
+                            'ItemDescription': batch.get('ItemDescription', ''),
+                            'Status': batch.get('Status', 'bdsStatus_Released'),
+                            'Batch': batch_number,
+                            'BatchNumber': batch_number,  # Support both field names for compatibility
+                            'AdmissionDate': batch.get('AdmissionDate', ''),
+                            'ManufacturingDate': batch.get('ManufacturingDate', ''),
+                            'ExpirationDate': expiry_date or None,
+                            'ExpiryDate': expiry_date or None,  # Support both field names
+                            'SystemNumber': batch.get('SystemNumber', '')
                         })
                     
                     logging.info(f"Formatted {len(formatted_batches)} batches for item {item_code}")
@@ -168,13 +190,32 @@ def get_batches():
             except Exception as e:
                 logging.error(f"Error getting batches from SAP: {str(e)}")
         
-        # Return mock data for offline mode or on error
+        # Return mock data for offline mode or on error based on your SAP B1 structure
         return jsonify({
             'success': True,
             'batches': [
-                {'Batch': f'BATCH-{item_code}-001', 'Quantity': 100, 'ExpirationDate': '2025-12-31'},
-                {'Batch': f'BATCH-{item_code}-002', 'Quantity': 50, 'ExpirationDate': '2025-11-30'},
-                {'Batch': f'BATCH-{item_code}-003', 'Quantity': 25, 'ExpirationDate': '2025-10-31'}
+                {
+                    'DocEntry': 1,
+                    'ItemCode': item_code,
+                    'ItemDescription': f'Item {item_code}',
+                    'Status': 'bdsStatus_Released',
+                    'Batch': f'{item_code}-BATCH001',
+                    'BatchNumber': f'{item_code}-BATCH001',
+                    'AdmissionDate': '2025-01-01T00:00:00Z',
+                    'ExpirationDate': '2025-12-31',
+                    'SystemNumber': 1
+                },
+                {
+                    'DocEntry': 2,
+                    'ItemCode': item_code,
+                    'ItemDescription': f'Item {item_code}',
+                    'Status': 'bdsStatus_Released',
+                    'Batch': f'{item_code}-BATCH002',
+                    'BatchNumber': f'{item_code}-BATCH002',
+                    'AdmissionDate': '2025-02-01T00:00:00Z',
+                    'ExpirationDate': '2025-11-30',
+                    'SystemNumber': 2
+                }
             ]
         })
             
