@@ -897,10 +897,10 @@ def inventory_transfer_detail(transfer_id):
             item_name = request.form['item_name']
             quantity = float(request.form['quantity'])
             unit_of_measure = request.form['unit_of_measure']
-            from_warehouse_code = request.form['from_warehouse_code']
-            to_warehouse_code = request.form['to_warehouse_code']
-            from_bin = request.form['from_bin']
-            to_bin = request.form['to_bin']
+            from_warehouse_code = request.form['from_warehouse']  # Fixed field name
+            to_warehouse_code = request.form['to_warehouse']      # Fixed field name
+            from_bin = request.form.get('from_bin_location', request.form.get('from_bin', ''))
+            to_bin = request.form.get('to_bin_location', request.form.get('to_bin', ''))
             batch_number = request.form.get('batch_number', '')
             
             # Get item details from SAP B1 to ensure correct UOM
@@ -913,15 +913,20 @@ def inventory_transfer_detail(transfer_id):
                 actual_uom = unit_of_measure
                 logging.warning(f"⚠️ Could not get UOM from SAP for item {item_code}, using form value: {unit_of_measure}")
             
-            # Create new transfer item
+            # Create new transfer item with enhanced bin location support
             transfer_item = InventoryTransferItem(
                 inventory_transfer_id=transfer.id,
                 item_code=item_code,
                 item_name=item_name,
                 quantity=quantity,
+                requested_quantity=quantity,
+                transferred_quantity=0,
+                remaining_quantity=quantity,
                 unit_of_measure=actual_uom,
                 from_bin=from_bin,
                 to_bin=to_bin,
+                from_bin_location=from_bin,  # Set new field
+                to_bin_location=to_bin,      # Set new field
                 batch_number=batch_number if batch_number else None
             )
             
