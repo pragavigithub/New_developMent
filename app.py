@@ -34,16 +34,10 @@ app.secret_key = os.environ.get(
     "SESSION_SECRET") or "dev-secret-key-change-in-production"
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configure database - Use SQLite for Replit environment migration
+# Configure database - Use PostgreSQL in Replit environment
 database_url = os.environ.get("DATABASE_URL")
 
-# Check if DATABASE_URL points to MySQL (local development)
-# If so, use SQLite for Replit environment instead
-if database_url and "mysql" in database_url.lower():
-    logging.info("🔧 MySQL DATABASE_URL detected, switching to SQLite for Replit environment")
-    database_url = None  # Force use of SQLite
-
-if database_url and "postgresql" in database_url.lower():
+if database_url:
     logging.info(f"✅ Using PostgreSQL database from DATABASE_URL")
     app.config["SQLALCHEMY_DATABASE_URI"] = database_url
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
@@ -54,9 +48,8 @@ if database_url and "postgresql" in database_url.lower():
     }
     db_type = "postgresql"
 else:
-    # Use SQLite for Replit environment
-    logging.info("🔧 Using SQLite database for Replit environment")
-    import os
+    # Fallback to SQLite for development
+    logging.warning("⚠️ No DATABASE_URL found, using SQLite fallback")
     sqlite_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'wms.db')
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{sqlite_path}"
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
