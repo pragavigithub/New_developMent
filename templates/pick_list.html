@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Pick List - WMS{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>Pick List Management</h1>
+            <div>
+                {% if current_user.role in ['admin', 'manager'] %}
+                <button class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#approvalModal">
+                    <i data-feather="check-circle"></i> Pending Approvals
+                </button>
+                {% endif %}
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPickListModal">
+                    <i data-feather="plus"></i> Create Pick List
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pick List Documents -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Pick Lists</h5>
+            </div>
+            <div class="card-body">
+                {% if pick_lists %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Pick List ID</th>
+                                <th>Sales Order</th>
+                                <th>Pick List Number</th>
+                                <th>Status</th>
+                                <th>Assigned To</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pick_list in pick_lists %}
+                            <tr>
+                                <td>{{ pick_list.id }}</td>
+                                <td>{{ pick_list.sales_order_number }}</td>
+                                <td>{{ pick_list.pick_list_number }}</td>
+                                <td>
+                                    {% if pick_list.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% elif pick_list.status == 'approved' %}
+                                        <span class="badge bg-success">Approved</span>
+                                    {% elif pick_list.status == 'rejected' %}
+                                        <span class="badge bg-danger">Rejected</span>
+                                    {% elif pick_list.status == 'completed' %}
+                                        <span class="badge bg-info">Completed</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ pick_list.user.first_name }} {{ pick_list.user.last_name }}</td>
+                                <td>{{ pick_list.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                <td>
+                                    <a href="{{ url_for('pick_list_detail', pick_list_id=pick_list.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i data-feather="eye"></i> View
+                                    </a>
+                                    {% if current_user.role in ['admin', 'manager'] and pick_list.status == 'pending' %}
+                                    <button class="btn btn-sm btn-outline-success" onclick="approvePickList({{ pick_list.id }})">
+                                        <i data-feather="check"></i> Approve
+                                    </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i data-feather="list" style="width: 48px; height: 48px;" class="text-muted mb-3"></i>
+                    <h5>No Pick Lists</h5>
+                    <p class="text-muted">Create your first pick list to get started.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Pick List Modal -->
+<div class="modal fade" id="createPickListModal" tabindex="-1" aria-labelledby="createPickListModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createPickListModalLabel">Create Pick List</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="POST" action="{{ url_for('create_pick_list') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sales_order_number" class="form-label">Sales Order Number</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="sales_order_number" name="sales_order_number" required>
+                            <button class="btn btn-outline-secondary" type="button" onclick="scanSalesOrder()">
+                                <i data-feather="camera"></i> Scan
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="pick_list_number" class="form-label">Pick List Number</label>
+                        <input type="text" class="form-control" id="pick_list_number" name="pick_list_number" required>
+                    </div>
+                    
+                    <div class="scanner-container" id="pickListScannerContainer" style="display: none;">
+                        <video id="pickListScanVideo" class="scanner-video" autoplay></video>
+                        <div class="scanner-overlay"></div>
+                    </div>
+                    
+                    <div id="pickListValidationResult" style="display: none;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Pick List</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Approval Modal -->
+<div class="modal fade" id="approvalModal" tabindex="-1" aria-labelledby="approvalModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approvalModalLabel">Pending Approvals</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Pick List</th>
+                                <th>Sales Order</th>
+                                <th>Created By</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pendingApprovalsList">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function scanSalesOrder() {
+    const container = document.getElementById('pickListScannerContainer');
+    const video = document.getElementById('pickListScanVideo');
+    
+    container.style.display = 'block';
+    
+    startBarcodeScanner('pickListScanVideo', function(code) {
+        document.getElementById('sales_order_number').value = code;
+        container.style.display = 'none';
+        stopBarcodeScanner();
+        
+        // Auto-generate pick list number
+        document.getElementById('pick_list_number').value = 'PL-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-6);
+        
+        // Validate sales order
+        validateSalesOrder(code);
+    });
+}
+
+async function validateSalesOrder(soNumber) {
+    try {
+        const response = await fetch('/api/validate_sales_order', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ sales_order_number: soNumber })
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('pickListValidationResult');
+        
+        if (data.valid) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>Valid Sales Order:</strong> ${data.so_data.CardName || 'Unknown Customer'}
+                    <br><small>Order Total: ${data.so_data.DocTotal || 'N/A'}</small>
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Invalid Sales Order:</strong> ${data.error}
+                </div>
+            `;
+        }
+        
+        resultDiv.style.display = 'block';
+    } catch (error) {
+        console.error('Error validating sales order:', error);
+    }
+}
+
+async function approvePickList(pickListId) {
+    try {
+        const response = await fetch(`/pick_list/${pickListId}/approve`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            alert('Error approving pick list');
+        }
+    } catch (error) {
+        console.error('Error approving pick list:', error);
+        alert('Error approving pick list');
+    }
+}
+
+// Load pending approvals when modal is shown
+document.getElementById('approvalModal').addEventListener('shown.bs.modal', function () {
+    loadPendingApprovals();
+});
+
+async function loadPendingApprovals() {
+    try {
+        const response = await fetch('/api/pending_approvals');
+        const data = await response.json();
+        
+        const tbody = document.getElementById('pendingApprovalsList');
+        tbody.innerHTML = '';
+        
+        if (data.pick_lists && data.pick_lists.length > 0) {
+            data.pick_lists.forEach(pickList => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${pickList.pick_list_number}</td>
+                    <td>${pickList.sales_order_number}</td>
+                    <td>${pickList.user_name}</td>
+                    <td>${pickList.created_at}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success" onclick="approvePickList(${pickList.id})">
+                            <i data-feather="check"></i> Approve
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="rejectPickList(${pickList.id})">
+                            <i data-feather="x"></i> Reject
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            feather.replace();
+        } else {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center">No pending approvals</td></tr>';
+        }
+    } catch (error) {
+        console.error('Error loading pending approvals:', error);
+    }
+}
+
+async function rejectPickList(pickListId) {
+    if (confirm('Are you sure you want to reject this pick list?')) {
+        try {
+            const response = await fetch(`/pick_list/${pickListId}/reject`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            });
+            
+            if (response.ok) {
+                loadPendingApprovals();
+            } else {
+                alert('Error rejecting pick list');
+            }
+        } catch (error) {
+            console.error('Error rejecting pick list:', error);
+            alert('Error rejecting pick list');
+        }
+    }
+}
+
+// Auto-validate when sales order number is entered manually
+document.getElementById('sales_order_number').addEventListener('blur', function() {
+    const soNumber = this.value.trim();
+    if (soNumber) {
+        validateSalesOrder(soNumber);
+    }
+});
+
+// Clean up scanner when modal is closed
+document.getElementById('createPickListModal').addEventListener('hidden.bs.modal', function () {
+    stopBarcodeScanner();
+    document.getElementById('pickListScannerContainer').style.display = 'none';
+});
+</script>
+{% endblock %}
