@@ -220,8 +220,10 @@ class InventoryTransferItem(db.Model):
     transferred_quantity = db.Column(db.Float, default=0)  # Actually transferred quantity
     remaining_quantity = db.Column(db.Float, nullable=False)  # Remaining to transfer
     unit_of_measure = db.Column(db.String(10), nullable=False)
-    from_bin = db.Column(db.String(20), nullable=False)
-    to_bin = db.Column(db.String(20), nullable=False)
+    from_bin = db.Column(db.String(20), nullable=True)  # Made nullable for better compatibility
+    to_bin = db.Column(db.String(20), nullable=True)    # Made nullable for better compatibility
+    from_bin_location = db.Column(db.String(50), nullable=True)  # New field for detailed bin location
+    to_bin_location = db.Column(db.String(50), nullable=True)    # New field for detailed bin location
     batch_number = db.Column(db.String(50), nullable=True)
     available_batches = db.Column(db.Text, nullable=True)  # JSON list of available batches
     qc_status = db.Column(db.String(20), default='pending')  # pending, approved, rejected

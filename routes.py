@@ -111,7 +111,7 @@ def get_bins():
 def get_batches():
     """Get available batches for a specific item and warehouse"""
     try:
-        item_code = request.args.get('item')
+        item_code = request.args.get('item_code') or request.args.get('item')
         warehouse_code = request.args.get('warehouse')
         
         if not item_code:
@@ -165,8 +165,6 @@ def get_batches():
                     })
                 else:
                     logging.error(f"SAP B1 API call failed with status {response.status_code}: {response.text}")
-            except Exception as e:
-                logging.error(f"Error getting batches from SAP: {str(e)}")
             except Exception as e:
                 logging.error(f"Error getting batches from SAP: {str(e)}")
         

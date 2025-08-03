@@ -271,7 +271,7 @@
                     <div class="mb-3">
                         <label for="item_code" class="form-label">Item Code <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="item_code" name="item_code" required onblur="loadBatchNumbers()">
+                            <input type="text" class="form-control" id="item_code" name="item_code" required onchange="loadBatchNumbers()">
                             <button type="button" class="btn btn-outline-primary" onclick="scanItemCode()">
                                 <i data-feather="camera"></i> Scan Item
                             </button>
@@ -296,13 +296,14 @@
                             </div>
                         </div>
                     </div>
+                    <!-- From Warehouse and Bin Location -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="from_warehouse_code" class="form-label">From Warehouse <span class="text-danger">*</span></label>
+                                <label for="from_warehouse" class="form-label">From Warehouse <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="from_warehouse_code" name="from_warehouse_code" value="{{ transfer.from_warehouse or '' }}" readonly>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('from')">
+                                    <input type="text" class="form-control" id="from_warehouse" name="from_warehouse" value="{{ transfer.from_warehouse or '' }}" required onchange="handleWarehouseChange('from')">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="scanWarehouse('from')" title="Scan warehouse">
                                         <i data-feather="camera"></i> Scan
                                     </button>
                                 </div>
@@ -310,54 +311,68 @@
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="to_warehouse_code" class="form-label">To Warehouse <span class="text-danger">*</span></label>
+                                <label for="to_warehouse" class="form-label">To Warehouse <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="to_warehouse_code" name="to_warehouse_code" value="{{ transfer.to_warehouse or '' }}" readonly>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('to')">
+                                    <input type="text" class="form-control" id="to_warehouse" name="to_warehouse" value="{{ transfer.to_warehouse or '' }}" required onchange="handleWarehouseChange('to')">
+                                    <button class="btn btn-outline-secondary" type="button" onclick="scanWarehouse('to')" title="Scan warehouse">
                                         <i data-feather="camera"></i> Scan
                                     </button>
                                 </div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- From Bin and To Bin Location -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="from_bin" class="form-label">From Bin Location <span class="text-danger">*</span></label>
+                                <label for="from_bin_location" class="form-label">From Bin Location <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="from_bin" name="from_bin" required>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanBin('from')">
+                                    <select class="form-select" id="from_bin_select" onchange="handleFromBinSelection()">
+                                        <option value="">Select From Bin Location...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="scanBin('from')" title="Scan bin">
                                         <i data-feather="camera"></i> Scan
                                     </button>
                                 </div>
+                                <input type="text" class="form-control mt-2" id="from_bin_location" name="from_bin_location"
+                                       placeholder="Or enter bin location manually" style="display: none;" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="to_bin" class="form-label">To Bin Location <span class="text-danger">*</span></label>
+                                <label for="to_bin_location" class="form-label">To Bin Location <span class="text-danger">*</span></label>
                                 <div class="input-group">
-                                    <input type="text" class="form-control" id="to_bin" name="to_bin" required>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanBin('to')">
+                                    <select class="form-select" id="to_bin_select" onchange="handleToBinSelection()">
+                                        <option value="">Select To Bin Location...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="scanBin('to')" title="Scan bin">
                                         <i data-feather="camera"></i> Scan
                                     </button>
                                 </div>
+                                <input type="text" class="form-control mt-2" id="to_bin_location" name="to_bin_location"
+                                       placeholder="Or enter bin location manually" style="display: none;" required>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Batch Number Section -->
                     <div class="mb-3">
                         <label for="batch_number" class="form-label">Batch Number</label>
                         <div class="input-group">
-                            <select class="form-select" id="batch_number" name="batch_number">
-                                <option value="">Loading batches...</option>
+                            <select class="form-select" id="batch_select" onchange="handleBatchSelection()" disabled>
+                                <option value="">Error loading batches. Check connection.</option>
                             </select>
-                            <button type="button" class="btn btn-outline-primary" onclick="refreshBatches()">
+                            <button class="btn btn-outline-secondary" type="button" onclick="refreshBatches()" title="Refresh batches">
                                 <i data-feather="refresh-cw"></i> Refresh
                             </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="scanBatchNumber()">
+                            <button class="btn btn-outline-secondary" type="button" onclick="scanBatchNumber()" title="Scan batch">
                                 <i data-feather="camera"></i> Scan
                             </button>
                         </div>
-                        <small class="text-muted" id="batch_info">Select batch with available stock</small>
+                        <input type="text" class="form-control mt-2" id="batch_number" name="batch_number"
+                               placeholder="Or enter batch number manually" style="display: none;">
+                        <small class="text-muted" id="batch_info">Error loading batches. Check connection.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -373,14 +388,197 @@
 {% block scripts %}
 <script>
 function showAddItemModal() {
+    // Reset form
+    document.getElementById('addItemForm').reset();
+    document.getElementById('batch_select').innerHTML = '<option value="">Select Item Code first...</option>';
+    document.getElementById('batch_info').textContent = 'Select Item Code first to load batches';
+    
+    // Load warehouses and bins
+    loadWarehouses();
+    
     const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
     modal.show();
+}
+
+// Handle warehouse change - load bins for that warehouse
+function handleWarehouseChange(type) {
+    const warehouseField = document.getElementById(type + '_warehouse');
+    const binSelect = document.getElementById(type + '_bin_select');
+    
+    if (warehouseField.value) {
+        loadBinLocations(warehouseField.value, type);
+        binSelect.disabled = false;
+    } else {
+        binSelect.disabled = true;
+        binSelect.innerHTML = '<option value="">Select warehouse first...</option>';
+    }
+}
+
+// Load warehouses for dropdowns
+function loadWarehouses() {
+    fetch('/api/get-warehouses')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update warehouse field default values if available
+                console.log('Warehouses loaded:', data.warehouses.length);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading warehouses:', error);
+        });
+}
+
+// Load bin locations for specific warehouse
+function loadBinLocations(warehouseCode, type) {
+    const binSelect = document.getElementById(type + '_bin_select');
+    
+    binSelect.innerHTML = '<option value="">Loading bins...</option>';
+    
+    fetch(`/api/get-bins?warehouse=${warehouseCode}`)
+        .then(response => response.json())
+        .then(data => {
+            binSelect.innerHTML = '<option value="">Select Bin Location...</option>';
+            
+            if (data.success && data.bins) {
+                data.bins.forEach(bin => {
+                    const option = document.createElement('option');
+                    option.value = bin.BinCode || bin.bin_code;
+                    option.textContent = `${bin.BinCode || bin.bin_code}${bin.Description ? ' - ' + bin.Description : ''}`;
+                    binSelect.appendChild(option);
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error loading bins:', error);
+            binSelect.innerHTML = '<option value="">Error loading bins</option>';
+        });
+}
+
+// Handle bin selection
+function handleFromBinSelection() {
+    const binSelect = document.getElementById('from_bin_select');
+    const binLocation = document.getElementById('from_bin_location');
+    
+    if (binSelect.value) {
+        binLocation.value = binSelect.value;
+        binLocation.style.display = 'none';
+        binSelect.parentElement.style.display = 'flex';
+    }
+}
+
+function handleToBinSelection() {
+    const binSelect = document.getElementById('to_bin_select');
+    const binLocation = document.getElementById('to_bin_location');
+    
+    if (binSelect.value) {
+        binLocation.value = binSelect.value;
+        binLocation.style.display = 'none';
+        binSelect.parentElement.style.display = 'flex';
+    }
+}
+
+// Handle batch selection
+function handleBatchSelection() {
+    const batchSelect = document.getElementById('batch_select');
+    const batchNumber = document.getElementById('batch_number');
+    
+    if (batchSelect.value) {
+        batchNumber.value = batchSelect.value;
+        batchNumber.style.display = 'none';
+        batchSelect.parentElement.style.display = 'flex';
+    }
+}
+
+// Load batch numbers based on item code
+function loadBatchNumbers() {
+    const itemCode = document.getElementById('item_code').value;
+    const fromWarehouse = document.getElementById('from_warehouse').value;
+    const batchSelect = document.getElementById('batch_select');
+    const batchInfo = document.getElementById('batch_info');
+    
+    if (!itemCode) {
+        batchSelect.innerHTML = '<option value="">Select Item Code first...</option>';
+        batchInfo.textContent = 'Select Item Code first to load batches';
+        batchSelect.disabled = true;
+        return;
+    }
+    
+    batchSelect.innerHTML = '<option value="">Loading batches...</option>';
+    batchInfo.textContent = 'Loading available batches...';
+    batchSelect.disabled = false;
+    
+    const params = new URLSearchParams({
+        item_code: itemCode
+    });
+    
+    if (fromWarehouse) {
+        params.append('warehouse', fromWarehouse);
+    }
+    
+    fetch(`/api/get-batches?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            batchSelect.innerHTML = '<option value="">Select Batch...</option>';
+            
+            if (data.success && data.batches && data.batches.length > 0) {
+                data.batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.BatchNumber || batch.batch_number;
+                    option.textContent = `${batch.BatchNumber || batch.batch_number} (Qty: ${batch.Quantity || batch.quantity || 0})`;
+                    if (batch.ExpiryDate || batch.expiry_date) {
+                        option.setAttribute('data-expiry', batch.ExpiryDate || batch.expiry_date);
+                    }
+                    batchSelect.appendChild(option);
+                });
+                batchInfo.textContent = `Found ${data.batches.length} available batches`;
+            } else {
+                batchInfo.textContent = 'No batches found for this item';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading batches:', error);
+            batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+            batchInfo.textContent = 'Error loading batches. Check connection.';
+        });
+}
+
+// Refresh batches
+function refreshBatches() {
+    loadBatchNumbers();
+}
+
+// Scanning functions
+function scanItemCode() {
+    // Implement barcode scanning for item code
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        alert('Barcode scanning feature would be implemented here for item codes');
+    } else {
+        alert('Camera not available for scanning');
+    }
+}
+
+function scanWarehouse(type) {
+    // Implement barcode scanning for warehouse
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        alert(`Barcode scanning feature would be implemented here for ${type} warehouse`);
+    } else {
+        alert('Camera not available for scanning');
+    }
+}
+
+function scanBin(type) {
+    // Implement barcode scanning for bin location
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        alert(`Barcode scanning feature would be implemented here for ${type} bin location`);
+    } else {
+        alert('Camera not available for scanning');
+    }
 }
 
 function scanBatchNumber() {
     // Implement barcode scanning for batch number
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        // Start barcode scanning
         alert('Barcode scanning feature would be implemented here for batch numbers');
     } else {
         alert('Camera not available for scanning');
