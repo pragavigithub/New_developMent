@@ -50,6 +50,9 @@ A comprehensive warehouse management system with SAP B1 integration, built with 
 *To be updated based on user interactions*
 
 ## Recent Changes
+- **2025-08-03**: Fixed inventory transfer cascading dropdowns and manual entry
+- **2025-08-03**: Implemented QR/barcode generation with C# ZXing.QRCode compatibility
+- **2025-08-03**: Fixed Add Remaining and Edit button functionality with proper JavaScript
+- **2025-08-03**: Enhanced SAP B1 integration with exact API endpoints for batch/bin selection
+- **2025-08-03**: Added warehouse-based bin loading and item-based batch selection
 - **2025-08-03**: Migrated from Replit Agent to standard Replit environment
-- **2025-08-03**: Configured PostgreSQL database for production readiness
-- **2025-08-03**: Updated Flask configuration for Replit deployment

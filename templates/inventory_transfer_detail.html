@@ -543,28 +543,46 @@ function loadBatchNumbers() {
         params.append('warehouse', fromWarehouse);
     }
     
-    fetch(`/api/get-batches?${params}`)
+    // Use the correct batch API endpoint matching the SAP B1 integration
+    fetch(`/api/get-batch-numbers?${params}`)
         .then(response => response.json())
         .then(data => {
+            console.log('📦 Batch loading response:', data);
+            
             batchSelect.innerHTML = '<option value="">Select Batch...</option>';
             
             if (data.success && data.batches && data.batches.length > 0) {
                 data.batches.forEach(batch => {
                     const option = document.createElement('option');
                     option.value = batch.Batch || batch.BatchNumber || batch.batch_number;
-                    option.textContent = `${batch.Batch || batch.BatchNumber || batch.batch_number}`;
+                    
+                    // Create batch description with expiration and quantity info
+                    let batchText = batch.Batch || batch.BatchNumber || batch.batch_number;
+                    if (batch.ExpirationDate) {
+                        const expDate = new Date(batch.ExpirationDate);
+                        if (!isNaN(expDate.getTime())) {
+                            batchText += ` (Exp: ${expDate.toLocaleDateString()})`;
+                        }
+                    }
+                    if (batch.Quantity || batch.OnHandQuantity) {
+                        batchText += ` [Qty: ${batch.Quantity || batch.OnHandQuantity}]`;
+                    }
+                    
+                    option.textContent = batchText;
                     if (batch.ExpirationDate || batch.ExpiryDate || batch.expiry_date) {
                         option.setAttribute('data-expiry', batch.ExpirationDate || batch.ExpiryDate || batch.expiry_date);
                     }
                     batchSelect.appendChild(option);
                 });
                 batchInfo.textContent = `Found ${data.batches.length} available batches`;
+                console.log(`✅ Loaded ${data.batches.length} batches for item ${itemCode}`);
             } else {
                 batchInfo.textContent = 'No batches found for this item';
+                console.warn(`⚠️ No batches found for item ${itemCode}`, data);
             }
         })
         .catch(error => {
-            console.error('Error loading batches:', error);
+            console.error('❌ Error loading batches:', error);
             batchSelect.innerHTML = '<option value="">Error loading batches</option>';
             batchInfo.textContent = 'Error loading batches. Check connection.';
         });
@@ -613,35 +631,102 @@ function scanBatchNumber() {
 }
 
 function addItemFromRequest(itemCode, itemName, quantity, uom, fromWarehouse, toWarehouse) {
-    // Pre-fill the add item modal with data from the transfer request
-    const itemCodeField = document.getElementById('item_code');
-    const itemNameField = document.getElementById('item_name');
-    const quantityField = document.getElementById('quantity');
-    const uomField = document.getElementById('unit_of_measure');
-    const fromWarehouseField = document.getElementById('from_warehouse');
-    const toWarehouseField = document.getElementById('to_warehouse');
-    
-    if (itemCodeField) itemCodeField.value = itemCode;
-    if (itemNameField) itemNameField.value = itemName;
-    if (quantityField) quantityField.value = quantity;
-    if (uomField) uomField.value = uom;
-    if (fromWarehouseField) fromWarehouseField.value = fromWarehouse;
-    if (toWarehouseField) toWarehouseField.value = toWarehouse;
-    
-    // Load bins for both warehouses
-    if (fromWarehouse) {
-        onWarehouseInputChange('from');
+    try {
+        console.log('Add Remaining clicked:', {itemCode, itemName, quantity, uom, fromWarehouse, toWarehouse});
+        
+        // Reset form to add mode
+        const form = document.getElementById('addItemForm');
+        form.removeAttribute('data-edit-mode');
+        form.removeAttribute('data-item-id');
+        
+        // Update modal title
+        document.querySelector('#addItemModal .modal-title').textContent = 'Add Item to Transfer';
+        document.querySelector('#addItemForm button[type="submit"]').textContent = 'Add Item';
+        
+        // Pre-fill the add item modal with data from the transfer request
+        const itemCodeField = document.getElementById('item_code');
+        const itemNameField = document.getElementById('item_name');
+        const quantityField = document.getElementById('quantity');
+        const uomField = document.getElementById('unit_of_measure');
+        const fromWarehouseField = document.getElementById('from_warehouse');
+        const toWarehouseField = document.getElementById('to_warehouse');
+        
+        if (itemCodeField) itemCodeField.value = itemCode || '';
+        if (itemNameField) itemNameField.value = itemName || '';
+        if (quantityField) quantityField.value = quantity || 0;
+        if (uomField) uomField.value = uom || 'EA';
+        if (fromWarehouseField) fromWarehouseField.value = fromWarehouse || '';
+        if (toWarehouseField) toWarehouseField.value = toWarehouse || '';
+        
+        // Reset and show manual entry options
+        showManualEntryOptions();
+        
+        // Load bins for both warehouses
+        if (fromWarehouse && fromWarehouse.trim()) {
+            onWarehouseInputChange('from');
+        }
+        if (toWarehouse && toWarehouse.trim()) {
+            onWarehouseInputChange('to');
+        }
+        
+        // Load available batches for this item
+        if (itemCode && itemCode.trim()) {
+            loadBatchNumbers();
+        }
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error in addItemFromRequest:', error);
+        alert('Error loading item data. Please try again.');
     }
-    if (toWarehouse) {
-        onWarehouseInputChange('to');
+}
+
+// Show manual entry options for dropdowns
+function showManualEntryOptions() {
+    // Add manual entry toggle buttons for bins
+    addManualEntryToggle('from_bin_select', 'from_bin_location', 'Enter bin manually');
+    addManualEntryToggle('to_bin_select', 'to_bin_location', 'Enter bin manually');
+    addManualEntryToggle('batch_select', 'batch_number', 'Enter batch manually');
+}
+
+function addManualEntryToggle(selectId, inputId, buttonText) {
+    const selectElement = document.getElementById(selectId);
+    const inputElement = document.getElementById(inputId);
+    
+    if (selectElement && inputElement) {
+        // Create manual entry button if it doesn't exist
+        let toggleButton = selectElement.parentElement.querySelector('.manual-entry-toggle');
+        if (!toggleButton) {
+            toggleButton = document.createElement('button');
+            toggleButton.className = 'btn btn-outline-secondary manual-entry-toggle';
+            toggleButton.type = 'button';
+            toggleButton.textContent = buttonText;
+            toggleButton.onclick = () => toggleManualEntry(selectId, inputId);
+            selectElement.parentElement.appendChild(toggleButton);
+        }
     }
+}
+
+function toggleManualEntry(selectId, inputId) {
+    const selectElement = document.getElementById(selectId);
+    const inputElement = document.getElementById(inputId);
+    const toggleButton = selectElement.parentElement.querySelector('.manual-entry-toggle');
     
-    // Load available batches for this item
-    loadBatchNumbers();
-    
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
-    modal.show();
+    if (selectElement.style.display === 'none') {
+        // Show dropdown, hide manual input
+        selectElement.style.display = 'block';
+        inputElement.style.display = 'none';
+        toggleButton.textContent = toggleButton.textContent.replace('Show dropdown', 'Enter manually');
+    } else {
+        // Show manual input, hide dropdown
+        selectElement.style.display = 'none';
+        inputElement.style.display = 'block';
+        inputElement.focus();
+        toggleButton.textContent = toggleButton.textContent.replace('Enter manually', 'Show dropdown');
+    }
 }
 
 function submitTransfer(transferId) {
@@ -693,35 +778,110 @@ function removeItem(itemId) {
 }
 
 function editItem(itemId, itemCode, itemName, quantity, uom, fromBin, toBin, batchNumber) {
-    // Pre-fill the edit modal with current item data
-    document.getElementById('item_code').value = itemCode || '';
-    document.getElementById('item_name').value = itemName || '';
-    document.getElementById('quantity').value = quantity || '';
-    document.getElementById('unit_of_measure').value = uom || 'EA';
-    document.getElementById('from_bin').value = fromBin || '';
-    document.getElementById('to_bin').value = toBin || '';
-    
-    // Handle batch number textbox (changed from dropdown)
-    const batchInput = document.getElementById('batch_number');
-    batchInput.value = batchNumber || '';
-    
-    // Change form action to edit mode
-    const form = document.getElementById('addItemForm');
-    form.setAttribute('data-edit-mode', 'true');
-    form.setAttribute('data-item-id', itemId);
-    
-    // Change modal title and button text
-    document.querySelector('#addItemModal .modal-title').textContent = 'Edit Transfer Item';
-    document.querySelector('#addItemForm button[type="submit"]').textContent = 'Update Item';
-    
-    // Show the modal
-    const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
-    modal.show();
+    try {
+        console.log('Edit item clicked:', {itemId, itemCode, itemName, quantity, uom, fromBin, toBin, batchNumber});
+        
+        // Pre-fill the edit modal with current item data
+        document.getElementById('item_code').value = itemCode || '';
+        document.getElementById('item_name').value = itemName || '';
+        document.getElementById('quantity').value = quantity || '';
+        document.getElementById('unit_of_measure').value = uom || 'EA';
+        
+        // Handle bin locations - check if we have the fields
+        const fromBinField = document.getElementById('from_bin_location') || document.getElementById('from_bin');
+        const toBinField = document.getElementById('to_bin_location') || document.getElementById('to_bin');
+        
+        if (fromBinField) fromBinField.value = fromBin || '';
+        if (toBinField) toBinField.value = toBin || '';
+        
+        // Handle batch number
+        const batchInput = document.getElementById('batch_number');
+        if (batchInput) batchInput.value = batchNumber || '';
+        
+        // Change form action to edit mode
+        const form = document.getElementById('addItemForm');
+        form.setAttribute('data-edit-mode', 'true');
+        form.setAttribute('data-item-id', itemId);
+        
+        // Change modal title and button text
+        document.querySelector('#addItemModal .modal-title').textContent = 'Edit Transfer Item';
+        const submitButton = document.querySelector('#addItemForm button[type="submit"]');
+        if (submitButton) submitButton.textContent = 'Update Item';
+        
+        // Load current warehouse values and enable manual entry
+        const fromWarehouse = '{{ transfer.from_warehouse or "" }}';
+        const toWarehouse = '{{ transfer.to_warehouse or "" }}';
+        
+        document.getElementById('from_warehouse').value = fromWarehouse;
+        document.getElementById('to_warehouse').value = toWarehouse;
+        
+        // Show manual entry options
+        showManualEntryOptions();
+        
+        // Enable manual entry for existing values
+        if (fromBin) {
+            toggleManualEntry('from_bin_select', 'from_bin_location');
+        }
+        if (toBin) {
+            toggleManualEntry('to_bin_select', 'to_bin_location');
+        }
+        if (batchNumber) {
+            toggleManualEntry('batch_select', 'batch_number');
+        }
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error in editItem:', error);
+        alert('Error loading item for editing. Please try again.');
+    }
 }
 
 function handleFormSubmit(event) {
     const form = event.target;
     const isEditMode = form.getAttribute('data-edit-mode') === 'true';
+    const itemId = form.getAttribute('data-item-id');
+    
+    if (isEditMode && itemId) {
+        // Handle edit mode
+        event.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {
+            quantity: formData.get('quantity'),
+            from_bin: formData.get('from_bin_location') || formData.get('from_bin'),
+            to_bin: formData.get('to_bin_location') || formData.get('to_bin'),
+            batch_number: formData.get('batch_number')
+        };
+        
+        fetch(`/inventory_transfer/{{ transfer.id }}/item/${itemId}/edit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Item updated successfully');
+                location.reload();
+            } else {
+                alert(`Error updating item: ${data.error}`);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating item');
+        });
+        
+        return false;
+    }
+    
+    // Handle add mode (default form submission)
+    return true;
     
     if (isEditMode) {
         event.preventDefault();
