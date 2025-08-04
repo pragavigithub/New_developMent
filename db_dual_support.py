@@ -36,10 +36,15 @@ class DualDatabaseManager:
         
         try:
             mysql_url = f"mysql+pymysql://{mysql_config['user']}:{mysql_config['password']}@{mysql_config['host']}:{mysql_config['port']}/{mysql_config['database']}"
-            self.mysql_engine = create_engine(mysql_url)
-            logging.info("✅ MySQL engine configured for dual database support")
+            self.mysql_engine = create_engine(mysql_url, connect_args={'connect_timeout': 5})
+            
+            # Test the connection
+            with self.mysql_engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+                
+            logging.info("✅ MySQL engine configured and connected successfully")
         except Exception as e:
-            logging.warning(f"⚠️ MySQL engine setup failed: {e}. Operating in SQLite-only mode.")
+            logging.warning(f"⚠️ MySQL engine connection failed: {e}. Operating in SQLite-only mode.")
             self.mysql_engine = None
     
     def sync_to_mysql(self, table_name, operation, data=None, where_clause=None):

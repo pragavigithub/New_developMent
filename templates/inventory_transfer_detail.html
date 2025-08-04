@@ -593,6 +593,23 @@ function refreshBatches() {
     loadBatchNumbers();
 }
 
+// Add item from request (Add Remaining functionality)
+function addItemFromRequest(itemCode, itemName, remainingQty, uom, fromWarehouse, toWarehouse) {
+    // Fill the form with the selected item data
+    document.getElementById('item_code').value = itemCode;
+    document.getElementById('item_name').value = itemName;
+    document.getElementById('quantity').value = remainingQty;
+    document.getElementById('unit_of_measure').value = uom;
+    document.getElementById('from_warehouse').value = fromWarehouse;
+    document.getElementById('to_warehouse').value = toWarehouse;
+    
+    // Load batches for the selected item
+    loadBatchNumbers();
+    
+    // Show the modal
+    showAddItemModal();
+}
+
 // Scanning functions
 function scanItemCode() {
     // Implement barcode scanning for item code
@@ -630,59 +647,7 @@ function scanBatchNumber() {
     }
 }
 
-function addItemFromRequest(itemCode, itemName, quantity, uom, fromWarehouse, toWarehouse) {
-    try {
-        console.log('Add Remaining clicked:', {itemCode, itemName, quantity, uom, fromWarehouse, toWarehouse});
-        
-        // Reset form to add mode
-        const form = document.getElementById('addItemForm');
-        form.removeAttribute('data-edit-mode');
-        form.removeAttribute('data-item-id');
-        
-        // Update modal title
-        document.querySelector('#addItemModal .modal-title').textContent = 'Add Item to Transfer';
-        document.querySelector('#addItemForm button[type="submit"]').textContent = 'Add Item';
-        
-        // Pre-fill the add item modal with data from the transfer request
-        const itemCodeField = document.getElementById('item_code');
-        const itemNameField = document.getElementById('item_name');
-        const quantityField = document.getElementById('quantity');
-        const uomField = document.getElementById('unit_of_measure');
-        const fromWarehouseField = document.getElementById('from_warehouse');
-        const toWarehouseField = document.getElementById('to_warehouse');
-        
-        if (itemCodeField) itemCodeField.value = itemCode || '';
-        if (itemNameField) itemNameField.value = itemName || '';
-        if (quantityField) quantityField.value = quantity || 0;
-        if (uomField) uomField.value = uom || 'EA';
-        if (fromWarehouseField) fromWarehouseField.value = fromWarehouse || '';
-        if (toWarehouseField) toWarehouseField.value = toWarehouse || '';
-        
-        // Reset and show manual entry options
-        showManualEntryOptions();
-        
-        // Load bins for both warehouses
-        if (fromWarehouse && fromWarehouse.trim()) {
-            onWarehouseInputChange('from');
-        }
-        if (toWarehouse && toWarehouse.trim()) {
-            onWarehouseInputChange('to');
-        }
-        
-        // Load available batches for this item
-        if (itemCode && itemCode.trim()) {
-            loadBatchNumbers();
-        }
-        
-        // Show the modal
-        const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
-        modal.show();
-        
-    } catch (error) {
-        console.error('Error in addItemFromRequest:', error);
-        alert('Error loading item data. Please try again.');
-    }
-}
+
 
 // Show manual entry options for dropdowns
 function showManualEntryOptions() {

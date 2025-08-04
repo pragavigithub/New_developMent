@@ -138,17 +138,15 @@ with app.app_context():
         db.session.rollback()
         # Continue with application startup
 
-# Initialize dual database support for MySQL sync only if explicitly enabled
-if os.environ.get('ENABLE_MYSQL_SYNC') == 'true':
-    try:
-        from db_dual_support import init_dual_database
-        dual_db = init_dual_database(app)
-        app.config['DUAL_DB'] = dual_db
-        logging.info("✅ Dual database support initialized")
-    except Exception as e:
-        logging.warning(f"⚠️ Dual database support not available: {e}")
-        app.config['DUAL_DB'] = None
-else:
+# Initialize dual database support for MySQL sync 
+# Enable by default but fail gracefully if MySQL not available
+try:
+    from db_dual_support import init_dual_database
+    dual_db = init_dual_database(app)
+    app.config['DUAL_DB'] = dual_db
+    logging.info("✅ Dual database support initialized for MySQL sync")
+except Exception as e:
+    logging.warning(f"⚠️ Dual database support not available: {e}")
     app.config['DUAL_DB'] = None
     logging.info("💡 MySQL sync disabled, using single database mode")
 
