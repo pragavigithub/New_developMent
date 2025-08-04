@@ -1580,7 +1580,7 @@ def generate_label_qr():
                 'error': 'Missing required fields: item_code, item_name, po_number'
             })
         
-        # Enhanced QR content similar to your example format: "SO123456 | ItemCode: 98765 | Date: 2025-08-04"
+        # Clean QR content format for printing: "SO123456 | ItemCode: 98765"
         qr_data_parts = []
         if po_number:
             qr_data_parts.append(f"SO{po_number}")
@@ -1588,17 +1588,8 @@ def generate_label_qr():
             qr_data_parts.append(f"ItemCode: {item_code}")
         if batch_number:
             qr_data_parts.append(f"Batch: {batch_number}")
-        if warehouse_code:
-            qr_data_parts.append(f"WH: {warehouse_code}")
-        if bin_code:
-            qr_data_parts.append(f"Bin: {bin_code}")
-        if quantity:
-            qr_data_parts.append(f"Qty: {quantity}")
         
-        # Add current date
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        qr_data_parts.append(f"Date: {current_date}")
-        
+        # Only include essential information for clean printing
         qr_content = " | ".join(qr_data_parts)
         
         # Generate QR code image using enhanced library
@@ -1658,7 +1649,7 @@ def print_qr_label():
         item_code = data.get('item_code', '98765')
         custom_data = data.get('custom_data', '')
         
-        # Build QR content like your example
+        # Clean QR content for printing - no dates or unnecessary details
         qr_parts = []
         if so_number:
             qr_parts.append(f"SO{so_number}")
@@ -1666,10 +1657,6 @@ def print_qr_label():
             qr_parts.append(f"ItemCode: {item_code}")
         if custom_data:
             qr_parts.append(custom_data)
-        
-        # Add current date
-        current_date = datetime.now().strftime("%Y-%m-%d")
-        qr_parts.append(f"Date: {current_date}")
         
         qr_content = " | ".join(qr_parts)
         

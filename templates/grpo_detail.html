@@ -1160,11 +1160,13 @@ function postToSAPConfirm(button) {
     return false;
 }
 
-// QR Code Generation Functions
-let currentQRData = {};
+// QR Code Generation Functions - prevent duplicate declarations
+if (typeof window.currentQRData === 'undefined') {
+    window.currentQRData = {};
+}
 
 function generateQRLabel(itemCode, itemName, batchNumber, grpoId, poNumber) {
-    currentQRData = {
+    window.currentQRData = {
         item_code: itemCode,
         item_name: itemName,
         batch_number: batchNumber || null,
@@ -1186,7 +1188,7 @@ function generateQRCodeAPI() {
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify(currentQRData)
+        body: JSON.stringify(window.currentQRData)
     })
     .then(response => response.json())
     .then(data => {
@@ -1233,8 +1235,69 @@ function displayQRCode(content, imageData) {
 
 function regenerateQR() {
     const format = document.getElementById('qrFormat').value;
-    currentQRData.format = format;
+    window.currentQRData.format = format;
     generateQRCodeAPI();
+}
+
+// Print function for clean QR label
+function printQRLabel() {
+    const qrContainer = document.getElementById('qrCodeContainer');
+    const qrContent = qrContainer.innerHTML;
+    
+    // Create a clean print window with only QR code
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>QR Code Label</title>
+            <style>
+                body { 
+                    margin: 0; 
+                    padding: 20px; 
+                    text-align: center; 
+                    font-family: Arial, sans-serif;
+                }
+                .qr-container { 
+                    display: inline-block; 
+                    border: 2px solid #000; 
+                    padding: 20px; 
+                    margin: 20px auto;
+                }
+                img { 
+                    display: block; 
+                    margin: 0 auto; 
+                    max-width: 300px; 
+                    max-height: 300px; 
+                }
+                .qr-title {
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                }
+                @media print {
+                    body { margin: 0; padding: 0; }
+                    .qr-container { border: 2px solid #000; }
+                }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <div class="qr-title">QR Code Label</div>
+                ${qrContent}
+            </div>
+        </body>
+        </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.focus();
+    
+    // Auto-print after a short delay
+    setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+    }, 500);
 }
 
 // Set up event listeners when page loads
