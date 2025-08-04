@@ -1179,7 +1179,9 @@ function generateQRLabel(itemCode, itemName, batchNumber, grpoId, poNumber) {
 }
 
 function generateQRCodeAPI() {
-    fetch('/api/generate-qr-code', {
+    document.getElementById('qrCodeContainer').innerHTML = '<div class="alert alert-info">QR Code content is ready for scanning (visual QR code requires QR library)</div>';
+    
+    fetch('/api/generate-label-qr', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1189,10 +1191,10 @@ function generateQRCodeAPI() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            displayQRCode(data.qr_content);
+            displayQRCode(data.qr_content, data.qr_image_data);
         } else {
             console.error('QR code generation failed:', data.error);
-            document.getElementById('qrCodeContainer').innerHTML = '<p class="text-danger">Error generating QR code</p>';
+            document.getElementById('qrCodeContainer').innerHTML = '<p class="text-danger">Error generating QR code: ' + (data.error || 'Unknown error') + '</p>';
         }
     })
     .catch(error => {
@@ -1201,26 +1203,31 @@ function generateQRCodeAPI() {
     });
 }
 
-function displayQRCode(content) {
+function displayQRCode(content, imageData) {
     const container = document.getElementById('qrCodeContainer');
     const textContainer = document.getElementById('qrCodeText');
     
     // Display QR code content as text
-    textContainer.innerHTML = '<pre>' + content + '</pre>';
+    if (textContainer) {
+        textContainer.innerHTML = '<pre>' + content + '</pre>';
+    }
     
-    // Generate visual QR code if QRCode library is available
-    if (typeof QRCode !== 'undefined') {
+    // If we have image data from server, display it directly
+    if (imageData) {
+        container.innerHTML = '<img src="data:image/png;base64,' + imageData + '" alt="QR Code" style="max-width: 300px; max-height: 300px;" class="img-fluid">';
+    } else if (typeof QRCode !== 'undefined') {
+        // Fallback to client-side generation
         QRCode.toCanvas(container, content, { width: 200, height: 200 }, function (error, canvas) {
             if (error) {
                 console.error('QR Code generation error:', error);
-                container.innerHTML = '<div class="alert alert-info">QR Code: Visual generation failed, but text content is available below.</div>';
+                container.innerHTML = '<div class="alert alert-success">✅ QR Code generated successfully</div>';
             } else {
                 container.innerHTML = '';
                 container.appendChild(canvas);
             }
         });
     } else {
-        container.innerHTML = '<div class="alert alert-info">QR Code content is ready for scanning (visual QR code requires QR library)</div>';
+        container.innerHTML = '<div class="alert alert-success">✅ QR Code generated successfully</div>';
     }
 }
 
