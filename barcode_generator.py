@@ -38,7 +38,7 @@ class BarcodeGenerator:
             # Create QR code instance
             qr = qrcode.QRCode(
                 version=1,  # Controls size (1 = 21x21, up to 40)
-                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                error_correction=qrcode.ERROR_CORRECT_L,
                 box_size=10,
                 border=margin,
             )
