@@ -47,12 +47,16 @@ A comprehensive warehouse management system with SAP B1 integration, built with 
 - [ ] Application testing and validation
 
 ## User Preferences
-*To be updated based on user interactions*
+- **Database Priority**: MySQL for local development, PostgreSQL for cloud deployment
+- **Development Environment**: Dual database support to maintain local machine MySQL sync
+- **Integration Focus**: SAP B1 integration with batch management and warehouse operations
 
 ## Recent Changes
+- **2025-08-04**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-08-04**: Configured MySQL priority for local development with PostgreSQL fallback
+- **2025-08-04**: Fixed "Add Remaining" button functionality in inventory transfers
+- **2025-08-04**: Implemented `/api/get-batch-numbers` endpoint for SAP B1 batch integration
+- **2025-08-04**: Enhanced dual database support with improved connection testing
+- **2025-08-04**: Created MySQL setup tools and comprehensive documentation
 - **2025-08-03**: Fixed inventory transfer cascading dropdowns and manual entry
 - **2025-08-03**: Implemented QR/barcode generation with C# ZXing.QRCode compatibility
-- **2025-08-03**: Fixed Add Remaining and Edit button functionality with proper JavaScript
-- **2025-08-03**: Enhanced SAP B1 integration with exact API endpoints for batch/bin selection
-- **2025-08-03**: Added warehouse-based bin loading and item-based batch selection
-- **2025-08-03**: Migrated from Replit Agent to standard Replit environment

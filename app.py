@@ -34,25 +34,70 @@ app.secret_key = os.environ.get(
     "SESSION_SECRET") or "dev-secret-key-change-in-production"
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
-# Configure database - Use PostgreSQL for Replit environment, SQLite as fallback
-database_url = os.environ.get("DATABASE_URL")
+# Database configuration - prioritize MySQL for local development
+database_url = None
+db_type = None
 
-if database_url and not database_url.startswith("mysql"):
-    logging.info(f"✅ Using PostgreSQL database from DATABASE_URL")
-    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
-    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
-        "pool_recycle": 300,
-        "pool_pre_ping": True,
-        "pool_size": 10,
-        "max_overflow": 20
-    }
-    db_type = "postgresql"
-else:
-    # Use SQLite for development when no PostgreSQL available
-    if database_url and database_url.startswith("mysql"):
-        logging.warning("⚠️ MySQL DATABASE_URL found but not supported in Replit, using SQLite fallback")
-    else:
-        logging.warning("⚠️ No DATABASE_URL found, using SQLite fallback")
+# Check for MySQL configuration first (local development priority)
+mysql_config = {
+    'host': os.environ.get('MYSQL_HOST', 'localhost'),
+    'port': os.environ.get('MYSQL_PORT', '3306'),
+    'user': os.environ.get('MYSQL_USER', 'root'),
+    'password': os.environ.get('MYSQL_PASSWORD', 'root@123'),
+    'database': os.environ.get('MYSQL_DATABASE', 'wms_db_dev')
+}
+
+# Try MySQL first if any MySQL environment variables are set or DATABASE_URL contains mysql
+database_url_env = os.environ.get("DATABASE_URL", "")
+has_mysql_env = any(os.environ.get(key) for key in ['MYSQL_HOST', 'MYSQL_USER', 'MYSQL_PASSWORD', 'MYSQL_DATABASE'])
+is_mysql_url = database_url_env.startswith("mysql")
+
+if has_mysql_env or is_mysql_url:
+    try:
+        if is_mysql_url:
+            database_url = database_url_env
+            logging.info("✅ Using MySQL from DATABASE_URL environment variable")
+        else:
+            database_url = f"mysql+pymysql://{mysql_config['user']}:{mysql_config['password']}@{mysql_config['host']}:{mysql_config['port']}/{mysql_config['database']}"
+            logging.info("✅ Using MySQL from individual environment variables")
+        
+        # Test MySQL connection
+        from sqlalchemy import create_engine, text
+        test_engine = create_engine(database_url, connect_args={'connect_timeout': 5})
+        with test_engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+            "pool_size": 10,
+            "max_overflow": 20
+        }
+        db_type = "mysql"
+        logging.info("✅ MySQL database connection successful")
+        
+    except Exception as e:
+        logging.warning(f"⚠️ MySQL connection failed: {e}")
+        database_url = None
+
+# Fallback to PostgreSQL (Replit environment)
+if not database_url:
+    database_url = os.environ.get("DATABASE_URL")
+    if database_url and not database_url.startswith("mysql"):
+        logging.info("✅ Using PostgreSQL database (Replit environment)")
+        app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_recycle": 300,
+            "pool_pre_ping": True,
+            "pool_size": 10,
+            "max_overflow": 20
+        }
+        db_type = "postgresql"
+
+# Final fallback to SQLite
+if not database_url:
+    logging.warning("⚠️ No database found, using SQLite fallback")
     sqlite_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'instance', 'wms.db')
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{sqlite_path}"
     app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
