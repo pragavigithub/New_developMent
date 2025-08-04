@@ -63,5 +63,6 @@ A comprehensive warehouse management system with SAP B1 integration, built with 
 - **2025-08-04**: Implemented `/api/get-batch-numbers` endpoint for SAP B1 batch integration
 - **2025-08-04**: Enhanced dual database support with improved connection testing
 - **2025-08-04**: Created MySQL setup tools and comprehensive documentation
+- **2025-08-04**: Fixed QR code generation issues and database model constructor compatibility
 - **2025-08-03**: Fixed inventory transfer cascading dropdowns and manual entry
 - **2025-08-03**: Implemented QR/barcode generation with C# ZXing.QRCode compatibility

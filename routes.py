@@ -1612,19 +1612,18 @@ def generate_label_qr():
             })
         
         # Save QR code label to database
-        qr_label = QRCodeLabel(
-            label_type='GRN_ITEM',
-            item_code=item_code,
-            item_name=item_name,
-            po_number=po_number,
-            batch_number=batch_number,
-            warehouse_code=warehouse_code,
-            bin_code=bin_code,
-            quantity=float(quantity) if quantity else None,
-            qr_content=qr_content,
-            qr_format=format_type,
-            user_id=current_user.id
-        )
+        qr_label = QRCodeLabel()
+        qr_label.label_type = 'GRN_ITEM'
+        qr_label.item_code = item_code
+        qr_label.item_name = item_name
+        qr_label.po_number = po_number
+        qr_label.batch_number = batch_number
+        qr_label.warehouse_code = warehouse_code
+        qr_label.bin_code = bin_code
+        qr_label.quantity = float(quantity) if quantity else None
+        qr_label.qr_content = qr_content
+        qr_label.qr_format = format_type
+        qr_label.user_id = current_user.id
         
         db.session.add(qr_label)
         db.session.commit()
@@ -1650,13 +1649,13 @@ def generate_label_qr():
 @app.route('/api/print-qr-label', methods=['POST'])
 @login_required
 def print_qr_label():
-    """Generate and prepare QR code for printing with format like your example"""
+    """Generate and prepare QR code for printing with format like your example: SO123456 | ItemCode: 98765 | Date: 2025-08-04"""
     try:
         data = request.get_json()
         
         # Your example format: "SO123456 | ItemCode: 98765 | Date: 2025-08-04"
-        so_number = data.get('so_number', '')
-        item_code = data.get('item_code', '')
+        so_number = data.get('so_number', '123456')
+        item_code = data.get('item_code', '98765')
         custom_data = data.get('custom_data', '')
         
         # Build QR content like your example
@@ -1673,6 +1672,32 @@ def print_qr_label():
         qr_parts.append(f"Date: {current_date}")
         
         qr_content = " | ".join(qr_parts)
+        
+        # Generate QR code using enhanced library
+        generator = BarcodeGenerator()
+        qr_result = generator.generate_qr_code(qr_content, size=300, format='PNG')
+        
+        if qr_result['success']:
+            return jsonify({
+                'success': True,
+                'qr_content': qr_content,
+                'qr_image_data': qr_result['data'],
+                'qr_image_type': qr_result['mime_type'],
+                'qr_filename': qr_result['filename'],
+                'message': 'QR code ready for printing'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': qr_result.get('error', 'Failed to generate QR code')
+            })
+            
+    except Exception as e:
+        logging.error(f"Print QR label failed: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
         
         # Generate QR code with qrcode library (compatible with your example)
         generator = BarcodeGenerator()
