@@ -66,39 +66,77 @@ def get_batch_numbers():
         item_code = request.args.get('item_code')
         warehouse = request.args.get('warehouse', '')
         
+        logging.info(f"🔍 Batch API called for item: {item_code}, warehouse: {warehouse}")
+        
         if not item_code:
             return jsonify({'success': False, 'error': 'Item code required'}), 400
         
         sap = SAPIntegration()
         
         # Try to get batches from SAP B1
-        if sap.ensure_logged_in():
-            try:
+        try:
+            if sap.ensure_logged_in():
                 batches = sap.get_batch_numbers(item_code)
-                logging.info(f"Retrieved {len(batches)} batches for item {item_code}")
-                return jsonify({
-                    'success': True,
-                    'batches': batches
-                })
-            except Exception as e:
-                logging.error(f"Error getting batches from SAP: {str(e)}")
+                logging.info(f"📦 Retrieved {len(batches)} batches from SAP for item {item_code}")
+                
+                if batches:
+                    return jsonify({
+                        'success': True,
+                        'batches': batches,
+                        'source': 'sap_b1'
+                    })
+            
+            logging.warning(f"⚠️ SAP B1 offline or no batches found, returning mock data for {item_code}")
+            
+        except Exception as e:
+            logging.error(f"❌ Error getting batches from SAP: {str(e)}")
         
-        # Return mock data for offline mode or on error
+        # Clean item code for mock data generation
+        clean_item_code = item_code.replace('/', '-').replace(' ', '-')
+        
+        # Return realistic mock data for offline mode or on error
+        mock_batches = [
+            {
+                'Batch': f'BTH-{clean_item_code}-001',
+                'ItemCode': item_code,
+                'ExpirationDate': '2025-12-31T00:00:00Z',
+                'Quantity': 100,
+                'OnHandQuantity': 100,
+                'Status': 'bdsStatus_Released'
+            },
+            {
+                'Batch': f'BTH-{clean_item_code}-002', 
+                'ItemCode': item_code,
+                'ExpirationDate': '2025-06-30T00:00:00Z',
+                'Quantity': 75,
+                'OnHandQuantity': 75,
+                'Status': 'bdsStatus_Released'
+            },
+            {
+                'Batch': f'BTH-{clean_item_code}-003',
+                'ItemCode': item_code, 
+                'ExpirationDate': '2026-03-15T00:00:00Z',
+                'Quantity': 50,
+                'OnHandQuantity': 50,
+                'Status': 'bdsStatus_Released'
+            }
+        ]
+        
+        logging.info(f"📦 Returning {len(mock_batches)} mock batches for item {item_code}")
+        
         return jsonify({
             'success': True,
-            'batches': [
-                {'Batch': f'BATCH-{item_code}-001', 'ExpirationDate': '2025-12-31', 'Quantity': 100},
-                {'Batch': f'BATCH-{item_code}-002', 'ExpirationDate': '2025-06-30', 'Quantity': 50}
-            ]
+            'batches': mock_batches,
+            'source': 'mock_data'
         })
             
     except Exception as e:
-        logging.error(f"Error in get_batch_numbers API: {str(e)}")
+        logging.error(f"❌ Critical error in get_batch_numbers API: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e),
             'batches': []
-        })
+        }), 500
 
 @app.route('/api/get-bins', methods=['GET'])
 def get_bins():

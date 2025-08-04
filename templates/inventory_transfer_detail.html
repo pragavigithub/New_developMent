@@ -271,7 +271,7 @@
                     <div class="mb-3">
                         <label for="item_code" class="form-label">Item Code <span class="text-danger">*</span></label>
                         <div class="input-group">
-                            <input type="text" class="form-control" id="item_code" name="item_code" required onchange="loadBatchNumbers()">
+                            <input type="text" class="form-control" id="item_code" name="item_code" required onchange="loadBatchNumbers()" onblur="loadBatchNumbers()" onkeyup="debounceLoadBatches()">
                             <button type="button" class="btn btn-outline-primary" onclick="scanItemCode()">
                                 <i data-feather="camera"></i> Scan Item
                             </button>
@@ -517,20 +517,23 @@ function loadBatchNumbers() {
     const batchInfo = document.getElementById('batch_info');
     
     if (!itemCodeField || !batchSelect || !batchInfo) {
-        console.error('Required elements for batch loading not found');
+        console.error('❌ Required elements for batch loading not found');
         return;
     }
     
-    const itemCode = itemCodeField.value;
-    const fromWarehouse = fromWarehouseField ? fromWarehouseField.value : '';
+    const itemCode = itemCodeField.value.trim();
+    const fromWarehouse = fromWarehouseField ? fromWarehouseField.value.trim() : '';
+    
+    console.log(`🔍 Loading batches for item: "${itemCode}", warehouse: "${fromWarehouse}"`);
     
     if (!itemCode) {
         batchSelect.innerHTML = '<option value="">Select Item Code first...</option>';
-        batchInfo.textContent = 'Select Item Code first to load batches';
+        batchInfo.textContent = 'Enter Item Code to load batches';
         batchSelect.disabled = true;
         return;
     }
     
+    // Show loading state
     batchSelect.innerHTML = '<option value="">Loading batches...</option>';
     batchInfo.textContent = 'Loading available batches...';
     batchSelect.disabled = false;
@@ -543,25 +546,46 @@ function loadBatchNumbers() {
         params.append('warehouse', fromWarehouse);
     }
     
+    const apiUrl = `/api/get-batch-numbers?${params}`;
+    console.log(`🌐 API call: ${apiUrl}`);
+    
     // Use the correct batch API endpoint matching the SAP B1 integration
-    fetch(`/api/get-batch-numbers?${params}`)
-        .then(response => response.json())
+    fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        },
+        credentials: 'same-origin'
+    })
+        .then(response => {
+            console.log(`📡 API response status: ${response.status}`);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log('📦 Batch loading response:', data);
             
             batchSelect.innerHTML = '<option value="">Select Batch...</option>';
             
             if (data.success && data.batches && data.batches.length > 0) {
-                data.batches.forEach(batch => {
+                data.batches.forEach((batch, index) => {
                     const option = document.createElement('option');
-                    option.value = batch.Batch || batch.BatchNumber || batch.batch_number;
+                    const batchId = batch.Batch || batch.BatchNumber || batch.batch_number || `batch-${index}`;
+                    option.value = batchId;
                     
                     // Create batch description with expiration and quantity info
-                    let batchText = batch.Batch || batch.BatchNumber || batch.batch_number;
+                    let batchText = batchId;
                     if (batch.ExpirationDate) {
-                        const expDate = new Date(batch.ExpirationDate);
-                        if (!isNaN(expDate.getTime())) {
-                            batchText += ` (Exp: ${expDate.toLocaleDateString()})`;
+                        try {
+                            const expDate = new Date(batch.ExpirationDate);
+                            if (!isNaN(expDate.getTime())) {
+                                batchText += ` (Exp: ${expDate.toLocaleDateString()})`;
+                            }
+                        } catch (e) {
+                            console.warn('Invalid expiration date:', batch.ExpirationDate);
                         }
                     }
                     if (batch.Quantity || batch.OnHandQuantity) {
@@ -574,18 +598,32 @@ function loadBatchNumbers() {
                     }
                     batchSelect.appendChild(option);
                 });
-                batchInfo.textContent = `Found ${data.batches.length} available batches`;
+                
+                const source = data.source === 'sap_b1' ? '(SAP B1)' : '(Demo)';
+                batchInfo.textContent = `Found ${data.batches.length} available batches ${source}`;
                 console.log(`✅ Loaded ${data.batches.length} batches for item ${itemCode}`);
+                
+                // Enable the select
+                batchSelect.disabled = false;
             } else {
-                batchInfo.textContent = 'No batches found for this item';
+                batchInfo.textContent = data.error || 'No batches found for this item';
                 console.warn(`⚠️ No batches found for item ${itemCode}`, data);
+                batchSelect.disabled = true;
             }
         })
         .catch(error => {
             console.error('❌ Error loading batches:', error);
             batchSelect.innerHTML = '<option value="">Error loading batches</option>';
             batchInfo.textContent = 'Error loading batches. Check connection.';
+            batchSelect.disabled = true;
         });
+}
+
+// Debounced batch loading for better UX
+let batchLoadTimeout;
+function debounceLoadBatches() {
+    clearTimeout(batchLoadTimeout);
+    batchLoadTimeout = setTimeout(loadBatchNumbers, 500);
 }
 
 // Refresh batches
