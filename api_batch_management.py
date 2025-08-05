@@ -13,48 +13,69 @@ import logging
 
 @app.route('/api/get_available_batches/<item_code>')
 def get_available_batches(item_code):
-    """Get available batches for an item code with stock levels"""
     try:
         from_warehouse = request.args.get('from_warehouse', '')
-        
-        # Import SAPIntegration dynamically to avoid circular imports
         from sap_integration import SAPIntegration
         sap = SAPIntegration()
-        
-        # Get batch details from SAP B1
-        batches = sap.get_item_batches(item_code, from_warehouse)
-        
+        batches = sap.get_item_batches(item_code)
+        available_batches = []
         if batches:
-            # Filter batches with available stock
-            available_batches = []
             for batch in batches:
-                if batch.get('OnHandQuantity', 0) > 0:
-                    available_batches.append({
-                        'BatchNumber': batch.get('BatchNumber', ''),
-                        'OnHandQuantity': batch.get('OnHandQuantity', 0),
-                        'ExpiryDate': batch.get('ExpiryDate', ''),
-                        'ManufacturingDate': batch.get('ManufacturingDate', ''),
-                        'Warehouse': batch.get('Warehouse', from_warehouse)
-                    })
-            
-            return jsonify({
-                'success': True,
-                'batches': available_batches
-            })
-        else:
-            # Return empty batch option for non-batch managed items
-            return jsonify({
-                'success': True,
-                'batches': [{'BatchNumber': '', 'OnHandQuantity': 0, 'ExpiryDate': '', 'ManufacturingDate': '', 'Warehouse': from_warehouse}]
-            })
-            
+                available_batches.append({
+                    'BatchNumber': batch.get('BatchNumber', batch.get('Batch', '')),
+                    'OnHandQuantity': batch.get('OnHandQuantity', 0),  # Add if available
+                    'ExpiryDate': batch.get('ExpirationDate', ''),
+                    'ManufacturingDate': batch.get('ManufacturingDate', ''),
+                })
+        return jsonify(success=True, batches=available_batches)
     except Exception as e:
         logging.error(f"Error getting available batches for {item_code}: {str(e)}")
-        return jsonify({
-            'success': False,
-            'error': str(e),
-            'batches': [{'BatchNumber': '', 'OnHandQuantity': 0, 'ExpiryDate': '', 'ManufacturingDate': '', 'Warehouse': ''}]
-        })
+        return jsonify(success=False, error=str(e), batches=[])
+
+# @app.route('/api/get_available_batches/<item_code>')
+# def get_available_batches(item_code):
+#     """Get available batches for an item code with stock levels"""
+#     try:
+#         from_warehouse = request.args.get('from_warehouse', '')
+#
+#         # Import SAPIntegration dynamically to avoid circular imports
+#         from sap_integration import SAPIntegration
+#         sap = SAPIntegration()
+#
+#         # Get batch details from SAP B1
+#         batches = sap.get_item_batches(item_code)
+#
+#         if batches:
+#             # Filter batches with available stock
+#             available_batches = []
+#             for batch in batches:
+#                 if batch.get('Batch', 0) > 0:
+#                     available_batches.append({
+#                         'Batch': batch.get('Batch', ''),
+#
+#                         'ExpiryDate': batch.get('ExpirationDate', ''),
+#                         'ManufacturingDate': batch.get('ManufacturingDate', ''),
+#
+#                     })
+#
+#             return jsonify({
+#                 'success': True,
+#                 'batches': available_batches
+#             })
+#         else:
+#             # Return empty batch option for non-batch managed items
+#             return jsonify({
+#                 'success': True,
+#                 'batches': [{'BatchNumber': '', 'ExpiryDate': '', 'ManufacturingDate': ''}]
+#             })
+#
+#     except Exception as e:
+#         logging.error(f"Error getting available batches for {item_code}: {str(e)}")
+#         return jsonify({
+#             'success': False,
+#             'error': str(e),
+#             'batches': [{'BatchNumber': '', 'OnHandQuantity': 0, 'ExpiryDate': '', 'ManufacturingDate': '', 'Warehouse': ''}]
+#         })
 
 @app.route('/api/get_batch_stock/<item_code>/<batch_number>')
 def get_batch_stock(item_code, batch_number):

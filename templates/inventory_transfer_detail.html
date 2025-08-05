@@ -345,7 +345,7 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label for="batch_number" class="form-label">Batch Number</label>
+                        <label for="batch_number_select" class="form-label">Batch Number</label>
                         <div class="input-group">
                             <select class="form-select" id="batch_number_select" name="batch_number_select" onchange="handleBatchSelection()">
                                 <option value="">Loading batches...</option>
@@ -939,29 +939,29 @@ function loadBatchNumbers() {
     batchSelect.innerHTML = '<option value="">Loading batches...</option>';
     batchInfo.textContent = 'Loading available batches...';
     
-    fetch(`/api/get_available_batches/${itemCode}?from_warehouse=${fromWarehouse}`)
+    fetch(`/api/get_available_batches/${itemCode}`)
         .then(response => response.json())
         .then(data => {
             batchSelect.innerHTML = '';
-            
-            if (data.success && data.batches && data.batches.length > 0) {
+
+            if (data.success && data.Batch && data.Batch.length > 0) {
                 // Add empty option for non-batch items
                 batchSelect.innerHTML = '<option value="">No batch (if item is not batch managed)</option>';
-                
+
                 // Add available batches
-                data.batches.forEach(batch => {
-                    if (batch.OnHandQuantity > 0) {
+                data.Batch.forEach(batch => {
+                    if (batch.Batch > 0) {
                         const option = document.createElement('option');
-                        option.value = batch.BatchNumber;
-                        option.textContent = `${batch.BatchNumber} (Stock: ${batch.OnHandQuantity})`;
-                        if (batch.ExpiryDate) {
-                            option.textContent += ` - Exp: ${new Date(batch.ExpiryDate).toLocaleDateString()}`;
+                        option.value = batch.Batch;
+                        option.textContent = `${batch.Batch}`;
+                        if (batch.ExpirationDate) {
+                            option.textContent += ` - Exp: ${new Date(batch.ExpirationDate).toLocaleDateString()}`;
                         }
                         batchSelect.appendChild(option);
                     }
                 });
-                
-                batchInfo.textContent = `Found ${data.batches.length} available batches`;
+
+<!--                batchInfo.textContent = `Found ${data.batches.length} available batches`;-->
             } else {
                 batchSelect.innerHTML = '<option value="">No batches available</option>';
                 batchInfo.textContent = 'No batches found or item is not batch managed';

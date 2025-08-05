@@ -806,9 +806,9 @@ class SAPIntegration:
                 f"Error fetching batch numbers for {item_code}: {str(e)}")
             return []
 
-    def get_item_batches(self, item_code, warehouse_code=''):
+    def get_item_batches(self, item_code):
         """Get available batches for an item with stock information using BatchNumberDetails API"""
-        logging.info(f"🔍 Getting batches for item {item_code} in warehouse {warehouse_code}")
+        logging.info(f"🔍 Getting batches for item {item_code} ")
 
         if not self.ensure_logged_in():
             logging.warning("⚠️ No SAP B1 session - returning empty list")
@@ -820,7 +820,7 @@ class SAPIntegration:
             
             url = f"{self.base_url}/b1s/v1/BatchNumberDetails?$filter={filter_clause}"
             logging.info(f"🔍 Calling SAP B1 API: {url}")
-
+            print(url)
             response = self.session.get(url)
 
             if response.status_code == 200:
@@ -839,14 +839,14 @@ class SAPIntegration:
                         'ItemCode': batch.get('ItemCode', item_code),
                         'ItemDescription': batch.get('ItemDescription', ''),
                         'Status': batch.get('Status', ''),
-                        'OnHandQuantity': 100,  # Default stock quantity - should be fetched from warehouse info
+
                         'ExpiryDate': batch.get('ExpirationDate'),
                         'ExpirationDate': batch.get('ExpirationDate'),  # Alias
                         'ManufacturingDate': batch.get('ManufacturingDate'),
                         'AdmissionDate': batch.get('AdmissionDate'),
                         'BatchAttribute1': batch.get('BatchAttribute1'),
                         'BatchAttribute2': batch.get('BatchAttribute2'),
-                        'Warehouse': warehouse_code or 'Unknown',
+
                         'SystemNumber': batch.get('SystemNumber', 0)
                     }
                     formatted_batches.append(formatted_batch)
