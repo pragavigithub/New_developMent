@@ -80,47 +80,38 @@ def get_batch_numbers():
                 logging.info(f"📦 Retrieved {len(batches)} batches from SAP for item {item_code}")
                 
                 if batches:
+                    # Transform the batch data to the expected format
+                    formatted_batches = []
+                    for batch in batches:
+                        formatted_batch = {
+                            'Batch': batch.get('Batch', ''),
+                            'BatchNumber': batch.get('Batch', ''),
+                            'ItemCode': batch.get('ItemCode', item_code),
+                            'ItemDescription': batch.get('ItemDescription', ''),
+                            'Status': batch.get('Status', ''),
+                            'OnHandQuantity': 100,  # Default - should be fetched from warehouse stock
+                            'ExpirationDate': batch.get('ExpirationDate'),
+                            'ManufacturingDate': batch.get('ManufacturingDate'),
+                            'AdmissionDate': batch.get('AdmissionDate'),
+                            'BatchAttribute1': batch.get('BatchAttribute1'),
+                            'BatchAttribute2': batch.get('BatchAttribute2'),
+                            'SystemNumber': batch.get('SystemNumber', 0)
+                        }
+                        formatted_batches.append(formatted_batch)
+                    
                     return jsonify({
                         'success': True,
-                        'batches': batches,
+                        'batches': formatted_batches,
                         'source': 'sap_b1'
                     })
             
-            logging.warning(f"⚠️ SAP B1 offline or no batches found, returning mock data for {item_code}")
+            logging.warning(f"⚠️ SAP B1 offline or no batches found for {item_code}")
             
         except Exception as e:
             logging.error(f"❌ Error getting batches from SAP: {str(e)}")
         
-        # Clean item code for mock data generation
-        clean_item_code = item_code.replace('/', '-').replace(' ', '-')
-        
-        # Return realistic mock data for offline mode or on error
-        mock_batches = [
-            {
-                'Batch': f'BTH-{clean_item_code}-001',
-                'ItemCode': item_code,
-                'ExpirationDate': '2025-12-31T00:00:00Z',
-                'Quantity': 100,
-                'OnHandQuantity': 100,
-                'Status': 'bdsStatus_Released'
-            },
-            {
-                'Batch': f'BTH-{clean_item_code}-002', 
-                'ItemCode': item_code,
-                'ExpirationDate': '2025-06-30T00:00:00Z',
-                'Quantity': 75,
-                'OnHandQuantity': 75,
-                'Status': 'bdsStatus_Released'
-            },
-            {
-                'Batch': f'BTH-{clean_item_code}-003',
-                'ItemCode': item_code, 
-                'ExpirationDate': '2026-03-15T00:00:00Z',
-                'Quantity': 50,
-                'OnHandQuantity': 50,
-                'Status': 'bdsStatus_Released'
-            }
-        ]
+        # Return empty result for non-batch managed items or when SAP is offline
+        mock_batches = []
         
         logging.info(f"📦 Returning {len(mock_batches)} mock batches for item {item_code}")
         

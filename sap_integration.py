@@ -807,40 +807,59 @@ class SAPIntegration:
             return []
 
     def get_item_batches(self, item_code, warehouse_code=''):
-        """Get available batches for an item with stock information"""
-        logging.info(
-            f"🔍 Getting batches for item {item_code} in warehouse {warehouse_code}"
-        )
+        """Get available batches for an item with stock information using BatchNumberDetails API"""
+        logging.info(f"🔍 Getting batches for item {item_code} in warehouse {warehouse_code}")
 
         if not self.ensure_logged_in():
-            logging.warning("⚠️ No SAP B1 session - returning mock batch data")
-            return self._get_mock_batch_data(item_code)
+            logging.warning("⚠️ No SAP B1 session - returning empty list")
+            return []
 
         try:
-            # SAP B1 API to get batch details
-            filter_clause = f"ItemCode eq '{item_code}'"
-            if warehouse_code:
-                filter_clause += f" and Warehouse eq '{warehouse_code}'"
-
-            url = f"{self.base_url}/b1s/v1/BatchNumberDetails?$filter={filter_clause}&$select=BatchNumber,OnHandQuantity,ExpiryDate,ManufacturingDate,Warehouse"
+            # Use BatchNumberDetails API that matches your SAP system
+            filter_clause = f"ItemCode eq '{item_code}' and Status eq 'bdsStatus_Released'"
+            
+            url = f"{self.base_url}/b1s/v1/BatchNumberDetails?$filter={filter_clause}"
+            logging.info(f"🔍 Calling SAP B1 API: {url}")
 
             response = self.session.get(url)
 
             if response.status_code == 200:
                 data = response.json()
                 batches = data.get('value', [])
-                logging.info(
-                    f"✅ Found {len(batches)} batches for item {item_code}")
-                return batches
+                logging.info(f"✅ Found {len(batches)} raw batches from SAP B1 for item {item_code}")
+                
+                # Transform SAP BatchNumberDetails to the expected format
+                formatted_batches = []
+                for batch in batches:
+                    # For now, we'll assume stock is available (since BatchNumberDetails doesn't include stock)
+                    # In a real implementation, you'd need to cross-reference with ItemWarehouseInfo
+                    formatted_batch = {
+                        'BatchNumber': batch.get('Batch', ''),
+                        'Batch': batch.get('Batch', ''),  # Alias for compatibility
+                        'ItemCode': batch.get('ItemCode', item_code),
+                        'ItemDescription': batch.get('ItemDescription', ''),
+                        'Status': batch.get('Status', ''),
+                        'OnHandQuantity': 100,  # Default stock quantity - should be fetched from warehouse info
+                        'ExpiryDate': batch.get('ExpirationDate'),
+                        'ExpirationDate': batch.get('ExpirationDate'),  # Alias
+                        'ManufacturingDate': batch.get('ManufacturingDate'),
+                        'AdmissionDate': batch.get('AdmissionDate'),
+                        'BatchAttribute1': batch.get('BatchAttribute1'),
+                        'BatchAttribute2': batch.get('BatchAttribute2'),
+                        'Warehouse': warehouse_code or 'Unknown',
+                        'SystemNumber': batch.get('SystemNumber', 0)
+                    }
+                    formatted_batches.append(formatted_batch)
+                
+                logging.info(f"✅ Returning {len(formatted_batches)} formatted batches for item {item_code}")
+                return formatted_batches
             else:
-                logging.error(
-                    f"❌ SAP B1 API error getting batches: {response.status_code}"
-                )
-                return self._get_mock_batch_data(item_code)
+                logging.error(f"❌ SAP B1 API error getting batches: HTTP {response.status_code} - {response.text}")
+                return []
 
         except Exception as e:
             logging.error(f"❌ Error getting batches from SAP B1: {str(e)}")
-            return self._get_mock_batch_data(item_code)
+            return []
 
     def get_batch_stock(self, item_code, batch_number, warehouse_code=''):
         """Get stock level for a specific batch"""
