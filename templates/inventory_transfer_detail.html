@@ -347,9 +347,12 @@
                     <div class="mb-3">
                         <label for="batch_number" class="form-label">Batch Number</label>
                         <div class="input-group">
-                            <select class="form-select" id="batch_number" name="batch_number">
+                            <select class="form-select" id="batch_number_select" name="batch_number_select" onchange="handleBatchSelection()">
                                 <option value="">Loading batches...</option>
                             </select>
+                            <button type="button" class="btn btn-outline-primary" onclick="toggleManualBatchEntry()">
+                                <i data-feather="edit-3"></i> Manual
+                            </button>
                             <button type="button" class="btn btn-outline-primary" onclick="refreshBatches()">
                                 <i data-feather="refresh-cw"></i> Refresh
                             </button>
@@ -357,7 +360,8 @@
                                 <i data-feather="camera"></i> Scan
                             </button>
                         </div>
-                        <small class="text-muted" id="batch_info">Select batch with available stock</small>
+                        <input type="text" class="form-control mt-2" id="batch_number_manual" name="batch_number" placeholder="Enter batch number manually" style="display: none;">
+                        <small class="text-muted" id="batch_info">Select batch with available stock or enter manually</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -379,12 +383,27 @@ function showAddItemModal() {
 
 function scanBatchNumber() {
     // Implement barcode scanning for batch number
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        // Start barcode scanning
-        alert('Barcode scanning feature would be implemented here for batch numbers');
-    } else {
-        alert('Camera not available for scanning');
-    }
+    startCameraScanner('batch_number_manual', function(scannedCode) {
+        const manualInput = document.getElementById('batch_number_manual');
+        const batchSelect = document.getElementById('batch_number_select');
+        
+        // Set the scanned code in manual input and show it
+        manualInput.value = scannedCode;
+        manualInput.style.display = 'block';
+        
+        // Clear dropdown selection
+        batchSelect.value = '';
+        
+        // Update button text
+        const toggleBtn = document.querySelector('button[onclick="toggleManualBatchEntry()"]');
+        if (toggleBtn) {
+            toggleBtn.innerHTML = '<i data-feather="list"></i> Dropdown';
+            feather.replace();
+        }
+        
+        // Validate the scanned batch
+        validateBatchQuantity();
+    });
 }
 
 function addItemFromRequest(itemCode, itemName, quantity, uom, fromWarehouse, toWarehouse) {
@@ -461,9 +480,31 @@ function editItem(itemId, itemCode, itemName, quantity, uom, fromBin, toBin, bat
     document.getElementById('from_bin').value = fromBin || '';
     document.getElementById('to_bin').value = toBin || '';
 
-    // Handle batch number textbox (changed from dropdown)
-    const batchInput = document.getElementById('batch_number');
-    batchInput.value = batchNumber || '';
+    // Handle batch number - set in both dropdown and manual input
+    const batchSelect = document.getElementById('batch_number_select');
+    const batchManual = document.getElementById('batch_number_manual');
+    
+    if (batchNumber) {
+        // Check if batch exists in dropdown
+        const batchOption = batchSelect.querySelector(`option[value="${batchNumber}"]`);
+        if (batchOption) {
+            batchSelect.value = batchNumber;
+            batchManual.style.display = 'none';
+        } else {
+            // Use manual input for non-dropdown batches
+            batchManual.value = batchNumber;
+            batchManual.style.display = 'block';
+            batchSelect.value = '';
+            const toggleBtn = document.querySelector('button[onclick="toggleManualBatchEntry()"]');
+            if (toggleBtn) {
+                toggleBtn.innerHTML = '<i data-feather="list"></i> Dropdown';
+            }
+        }
+    } else {
+        batchSelect.value = '';
+        batchManual.value = '';
+        batchManual.style.display = 'none';
+    }
 
     // Change form action to edit mode
     const form = document.getElementById('addItemForm');
@@ -489,11 +530,16 @@ function handleFormSubmit(event) {
         const itemId = form.getAttribute('data-item-id');
         const formData = new FormData(form);
         
+        // Get batch number from either manual input or dropdown
+        const manualInput = document.getElementById('batch_number_manual');
+        const batchSelect = document.getElementById('batch_number_select');
+        const batchNumber = manualInput.style.display !== 'none' ? manualInput.value : batchSelect.value;
+        
         const data = {
             quantity: formData.get('quantity'),
             from_bin: formData.get('from_bin'),
             to_bin: formData.get('to_bin'),
-            batch_number: formData.get('batch_number')
+            batch_number: batchNumber
         };
         
         fetch(`/inventory_transfer/{{ transfer.id }}/item/${itemId}/edit`, {
@@ -881,7 +927,7 @@ document.getElementById('addItemModal').addEventListener('show.bs.modal', functi
 function loadBatchNumbers() {
     const itemCode = document.getElementById('item_code').value;
     const fromWarehouse = document.getElementById('from_warehouse_code').value;
-    const batchSelect = document.getElementById('batch_number');
+    const batchSelect = document.getElementById('batch_number_select');
     const batchInfo = document.getElementById('batch_info');
     
     if (!itemCode) {
@@ -928,13 +974,53 @@ function loadBatchNumbers() {
         });
 }
 
+// Handle batch selection between dropdown and manual entry
+function handleBatchSelection() {
+    const batchSelect = document.getElementById('batch_number_select');
+    const manualInput = document.getElementById('batch_number_manual');
+    
+    if (batchSelect.value) {
+        manualInput.value = batchSelect.value;
+        validateBatchQuantity();
+    }
+}
+
+// Toggle between dropdown selection and manual entry
+function toggleManualBatchEntry() {
+    const batchSelect = document.getElementById('batch_number_select');
+    const manualInput = document.getElementById('batch_number_manual');
+    const toggleBtn = event.target.closest('button');
+    
+    if (manualInput.style.display === 'none') {
+        // Show manual input
+        manualInput.style.display = 'block';
+        manualInput.focus();
+        toggleBtn.innerHTML = '<i data-feather="list"></i> Dropdown';
+        // Clear dropdown selection
+        batchSelect.value = '';
+    } else {
+        // Hide manual input
+        manualInput.style.display = 'none';
+        toggleBtn.innerHTML = '<i data-feather="edit-3"></i> Manual';
+        // Copy manual value to dropdown if it exists
+        if (manualInput.value && batchSelect.querySelector(`option[value="${manualInput.value}"]`)) {
+            batchSelect.value = manualInput.value;
+        }
+    }
+    feather.replace(); // Re-render feather icons
+}
+
 function refreshBatches() {
     loadBatchNumbers();
 }
 
 function validateBatchQuantity() {
     const itemCode = document.getElementById('item_code').value;
-    const batchNumber = document.getElementById('batch_number').value;
+    const manualInput = document.getElementById('batch_number_manual');
+    const batchSelect = document.getElementById('batch_number_select');
+    
+    // Get batch number from either manual input or dropdown
+    const batchNumber = manualInput.style.display !== 'none' ? manualInput.value : batchSelect.value;
     const warehouse = document.getElementById('from_warehouse_code').value;
     const quantity = parseFloat(document.getElementById('quantity').value) || 0;
     
@@ -965,7 +1051,8 @@ function validateBatchQuantity() {
 // Add event listeners for real-time validation
 document.addEventListener('DOMContentLoaded', function() {
     const quantityInput = document.getElementById('quantity');
-    const batchSelect = document.getElementById('batch_number');
+    const batchSelect = document.getElementById('batch_number_select');
+    const batchManual = document.getElementById('batch_number_manual');
     
     if (quantityInput) {
         quantityInput.addEventListener('blur', validateBatchQuantity);
@@ -974,6 +1061,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (batchSelect) {
         batchSelect.addEventListener('change', validateBatchQuantity);
+    }
+    
+    if (batchManual) {
+        batchManual.addEventListener('blur', validateBatchQuantity);
+        batchManual.addEventListener('input', debounce(validateBatchQuantity, 500));
     }
 });
 

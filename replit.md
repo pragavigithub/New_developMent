@@ -54,7 +54,12 @@ A comprehensive warehouse management system with SAP B1 integration, built with 
 - **Integration Focus**: SAP B1 integration with batch management and warehouse operations
 
 ## Recent Changes
-- **2025-08-04**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-08-05**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-08-05**: Enhanced Inventory Transfer Add screen with batch dropdown functionality
+- **2025-08-05**: Added manual batch entry option alongside batch dropdown selection
+- **2025-08-05**: Implemented batch validation and stock checking for inventory transfers
+- **2025-08-05**: Fixed all buttons in Inventory Transfer screen (Add Item, Edit, Remove, QR Generation)
+- **2025-08-05**: Enhanced batch scanning with barcode support for manual entry
 - **2025-08-04**: Enhanced QR code system with qrcode[pil] library for better compatibility
 - **2025-08-04**: Added `/api/print-qr-label` endpoint with format "SO123456 | ItemCode: 98765 | Date: 2025-08-04"
 - **2025-08-04**: Maintained MySQL priority configuration for local development
