@@ -124,6 +124,8 @@ def cascading_get_bin_locations():
             ]
         })
 
+
+
 @app.route('/api/warehouse/<warehouse_code>/validate', methods=['GET'])
 @login_required
 def validate_warehouse(warehouse_code):
@@ -179,7 +181,7 @@ def validate_warehouse(warehouse_code):
 
 @app.route('/api/batches', methods=['GET'])
 @login_required
-def cascading_get_batches():
+def get_item_batches():
     """Get batches for a specific item code and optionally warehouse"""
     try:
         item_code = request.args.get('item_code')

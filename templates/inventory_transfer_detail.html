@@ -300,73 +300,15 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="from_warehouse_code" class="form-label">From Warehouse <span class="text-danger">*</span></label>
-                                <div class="mb-2">
-                                    <div class="btn-group w-100" role="group">
-                                        <input type="radio" class="btn-check" name="from_warehouse_mode" id="from_warehouse_dropdown" value="dropdown" checked onclick="toggleWarehouseMode('from', 'dropdown')">
-                                        <label class="btn btn-outline-primary btn-sm" for="from_warehouse_dropdown">
-                                            <i data-feather="list"></i> Select
-                                        </label>
-                                        
-                                        <input type="radio" class="btn-check" name="from_warehouse_mode" id="from_warehouse_manual" value="manual" onclick="toggleWarehouseMode('from', 'manual')">
-                                        <label class="btn btn-outline-secondary btn-sm" for="from_warehouse_manual">
-                                            <i data-feather="edit-3"></i> Manual
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <!-- Warehouse Dropdown -->
-                                <div id="from_warehouse_dropdown_container">
-                                    <select class="form-select" id="from_warehouse_select" name="from_warehouse_code" onchange="handleWarehouseSelection('from')" required>
-                                        <option value="">Select warehouse...</option>
-                                        <option value="{{ transfer.from_warehouse or '' }}" selected>{{ transfer.from_warehouse or 'Loading...' }}</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Manual Warehouse Entry -->
-                                <div id="from_warehouse_manual_container" style="display: none;">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="from_warehouse_input" name="from_warehouse_code" placeholder="Enter warehouse code" onblur="handleWarehouseManualEntry('from')">
-                                        <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('from')">
-                                            <i data-feather="camera"></i> Scan
-                                        </button>
-                                    </div>
-                                </div>
+                                <input type="text" class="form-control" id="from_warehouse_code" name="from_warehouse_code" value="{{ transfer.from_warehouse }}" readonly>
+                                <small class="text-muted">Preset from transfer request</small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="to_warehouse_code" class="form-label">To Warehouse <span class="text-danger">*</span></label>
-                                <div class="mb-2">
-                                    <div class="btn-group w-100" role="group">
-                                        <input type="radio" class="btn-check" name="to_warehouse_mode" id="to_warehouse_dropdown" value="dropdown" checked onclick="toggleWarehouseMode('to', 'dropdown')">
-                                        <label class="btn btn-outline-primary btn-sm" for="to_warehouse_dropdown">
-                                            <i data-feather="list"></i> Select
-                                        </label>
-                                        
-                                        <input type="radio" class="btn-check" name="to_warehouse_mode" id="to_warehouse_manual" value="manual" onclick="toggleWarehouseMode('to', 'manual')">
-                                        <label class="btn btn-outline-secondary btn-sm" for="to_warehouse_manual">
-                                            <i data-feather="edit-3"></i> Manual
-                                        </label>
-                                    </div>
-                                </div>
-                                
-                                <!-- Warehouse Dropdown -->
-                                <div id="to_warehouse_dropdown_container">
-                                    <select class="form-select" id="to_warehouse_select" name="to_warehouse_code" onchange="handleWarehouseSelection('to')" required>
-                                        <option value="">Select warehouse...</option>
-                                        <option value="{{ transfer.to_warehouse or '' }}" selected>{{ transfer.to_warehouse or 'Loading...' }}</option>
-                                    </select>
-                                </div>
-                                
-                                <!-- Manual Warehouse Entry -->
-                                <div id="to_warehouse_manual_container" style="display: none;">
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" id="to_warehouse_input" name="to_warehouse_code" placeholder="Enter warehouse code" onblur="handleWarehouseManualEntry('to')">
-                                        <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('to')">
-                                            <i data-feather="camera"></i> Scan
-                                        </button>
-                                    </div>
-                                </div>
+                                <input type="text" class="form-control" id="to_warehouse_code" name="to_warehouse_code" value="{{ transfer.to_warehouse }}" readonly>
+                                <small class="text-muted">Preset from transfer request</small>
                             </div>
                         </div>
                     </div>
@@ -644,20 +586,20 @@ function loadItemBatches() {
     
     if (!itemCode) {
         batchSelect.innerHTML = '<option value="">Select item code first to load batches...</option>';
-        batchInfo.textContent = 'Select an item code to view available batches';
+        if (batchInfo) batchInfo.textContent = 'Select an item code to view available batches';
         return;
     }
     
     // Show loading state
     batchSelect.innerHTML = '<option value="">Loading available batches...</option>';
-    batchInfo.textContent = 'Loading batches from SAP B1...';
+    if (batchInfo) batchInfo.textContent = 'Loading batches from SAP B1...';
     
     // Get warehouse for filtering if available
     const fromWarehouse = document.getElementById('from_warehouse_code').value;
     let url = `/api/batches?item_code=${encodeURIComponent(itemCode)}`;
-<!--    if (fromWarehouse) {-->
-<!--        url += `?from_warehouse=${encodeURIComponent(fromWarehouse)}`;-->
-<!--    }-->
+    if (fromWarehouse) {
+        url += `&warehouse=${encodeURIComponent(fromWarehouse)}`;
+    }
     
     fetch(url)
         .then(response => response.json())
