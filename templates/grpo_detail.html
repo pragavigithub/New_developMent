@@ -81,7 +81,6 @@
                                     <th>Item Code</th>
                                     <th>Description</th>
                                     <th>Ordered</th>
-                                    <th>Open</th>
                                     <th>UoM</th>
                                     <th>Price</th>
                                     <th>Status</th>
@@ -94,7 +93,6 @@
                                     <td><strong>{{ po_item.get('ItemCode', '') }}</strong></td>
                                     <td>{{ po_item.get('ItemDescription', 'N/A') }}</td>
                                     <td>{{ po_item.get('Quantity', 0) }}</td>
-                                    <td>{{ po_item.get('OpenQuantity', po_item.get('OpenQty', 0)) }}</td>
                                     <td>{{ po_item.get('UoMCode', po_item.get('UoMEntry', 'EA')) }}</td>
                                     <td>${{ "%.2f"|format(po_item.get('Price', 0)|float) }}</td>
                                     <td>
@@ -157,7 +155,6 @@
                                     <th>Item Code</th>
                                     <th>Description</th>
                                     <th>PO Qty</th>
-                                    <th>Open Qty</th>
                                     <th>Received Qty</th>
                                     <th>UoM</th>
                                     <th>Warehouse</th>
@@ -173,7 +170,6 @@
                                     <td><strong>{{ item.item_code }}</strong></td>
                                     <td>{{ item.item_name }}</td>
                                     <td>{{ item.po_quantity or '-' }}</td>
-                                    <td>{{ item.open_quantity or '-' }}</td>
                                     <td>
                                         {% if grpo_doc.status in ['draft', 'rejected'] %}
                                         <input type="number" class="form-control form-control-sm" 

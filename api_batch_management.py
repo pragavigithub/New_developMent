@@ -23,7 +23,7 @@ def get_available_batches(item_code):
             for batch in batches:
                 available_batches.append({
                     'BatchNumber': batch.get('BatchNumber', batch.get('Batch', '')),
-                    'OnHandQuantity': batch.get('OnHandQuantity', 0),  # Add if available
+
                     'ExpiryDate': batch.get('ExpirationDate', ''),
                     'ManufacturingDate': batch.get('ManufacturingDate', ''),
                 })
