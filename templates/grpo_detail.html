@@ -580,14 +580,14 @@ function loadCascadingBinLocations(warehouseCode) {
 function loadCascadingBatches() {
     const itemCode = document.getElementById('item_code').value;
     const warehouseCode = document.getElementById('warehouse_code').value || document.getElementById('warehouse_select').value;
-    
+
     if (!itemCode) {
         console.log('No item code available for batch loading');
         return;
     }
-    
+
     console.log(`Loading batches for item: ${itemCode}, warehouse: ${warehouseCode}`);
-    
+
     let url = `/api/get-batches?item=${itemCode}`;
     if (warehouseCode) {
         url += `&warehouse=${warehouseCode}`;
@@ -595,14 +595,14 @@ function loadCascadingBatches() {
         // If no warehouse is selected, try to use a default one
         url += `&warehouse=WH001`;
     }
-    
+
     fetch(url)
         .then(response => response.json())
         .then(data => {
             console.log('Batch API response:', data);
             const batchSelect = document.getElementById('batch_select');
             batchSelect.innerHTML = '<option value="">Select Batch...</option>';
-            
+
             if (data.success && data.batches && data.batches.length > 0) {
                 data.batches.forEach(batch => {
                     const option = document.createElement('option');

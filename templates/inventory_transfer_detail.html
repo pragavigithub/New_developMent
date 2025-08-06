@@ -344,25 +344,41 @@
                             </div>
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="batch_number_select" class="form-label">Batch Number</label>
-                        <div class="input-group">
-                            <select class="form-select" id="batch_number_select" name="batch_number_select" onchange="handleBatchSelection()">
-                                <option value="">Loading batches...</option>
-                            </select>
-                            <button type="button" class="btn btn-outline-primary" onclick="toggleManualBatchEntry()">
-                                <i data-feather="edit-3"></i> Manual
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="refreshBatches()">
-                                <i data-feather="refresh-cw"></i> Refresh
-                            </button>
-                            <button type="button" class="btn btn-outline-primary" onclick="scanBatchNumber()">
-                                <i data-feather="camera"></i> Scan
-                            </button>
+
+                    <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="batch_number" class="form-label">Batch Number</label>
+                                <div class="input-group">
+                                    <select class="form-select" id="batch_select" onchange="handleBatchSelection()" disabled>
+                                        <option value="">Select Batch...</option>
+                                    </select>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleManualBatch()" title="Enter manually">
+                                        <i data-feather="edit-3"></i>
+                                    </button>
+                                </div>
+                                <input type="text" class="form-control mt-2" id="batch_number" name="batch_number"
+                                       placeholder="Or enter batch number manually" style="display: none;">
+                            </div>
                         </div>
-                        <input type="text" class="form-control mt-2" id="batch_number_manual" name="batch_number" placeholder="Enter batch number manually" style="display: none;">
-                        <small class="text-muted" id="batch_info">Select batch with available stock or enter manually</small>
-                    </div>
+<!--                    <div class="mb-3">-->
+<!--                        <label for="batch_number_select" class="form-label">Batch Number</label>-->
+<!--                        <div class="input-group">-->
+<!--                            <select class="form-select" id="batch_number_select" name="batch_number_select" onchange="handleBatchSelection()">-->
+<!--                                <option value="">Loading batches...</option>-->
+<!--                            </select>-->
+<!--                            <button type="button" class="btn btn-outline-primary" onclick="toggleManualBatchEntry()">-->
+<!--                                <i data-feather="edit-3"></i> Manual-->
+<!--                            </button>-->
+<!--                            <button type="button" class="btn btn-outline-primary" onclick="refreshBatches()">-->
+<!--                                <i data-feather="refresh-cw"></i> Refresh-->
+<!--                            </button>-->
+<!--                            <button type="button" class="btn btn-outline-primary" onclick="scanBatchNumber()">-->
+<!--                                <i data-feather="camera"></i> Scan-->
+<!--                            </button>-->
+<!--                        </div>-->
+<!--                        <input type="text" class="form-control mt-2" id="batch_number_manual" name="batch_number" placeholder="Enter batch number manually" style="display: none;">-->
+<!--                        <small class="text-muted" id="batch_info">Select batch with available stock or enter manually</small>-->
+<!--                    </div>-->
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -376,9 +392,159 @@
 
 {% block scripts %}
 <script>
+// Show add item modal
 function showAddItemModal() {
+    selectedPoItemData = null;
+
+    // Clear form fields
+    document.getElementById('item_code').value = '';
+    document.getElementById('item_name').value = '';
+    document.getElementById('unit_of_measure').value = 'EA';
+
+    document.getElementById('quantity').value = '';
+    document.getElementById('batch_number').value = '';
+
+
+    // Reset dropdowns
+
+    document.getElementById('batch_select').innerHTML = '<option value="">Select Batch...</option>';
+
+    // Disable dependent dropdowns
+
+    document.getElementById('batch_select').disabled = true;
+
+    // Load initial data
+
+
+    // Show modal
     const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
     modal.show();
+}
+
+// Handle item code change for cascading
+function handleItemCodeChange() {
+    const itemCode = document.getElementById('item_code').value;
+    if (itemCode) {
+        loadCascadingWarehouses();
+        loadCascadingBatches();
+    } else {
+        // Clear dependent dropdowns when item code is cleared
+        document.getElementById('batch_select').innerHTML = '<option value="">Select Batch...</option>';
+        document.getElementById('batch_select').disabled = true;
+    }
+}
+
+// Handle warehouse selection
+function handleWarehouseSelection() {
+    const warehouseSelect = document.getElementById('warehouse_select');
+    const warehouseCode = document.getElementById('warehouse_code');
+    const binSelect = document.getElementById('bin_select');
+    const batchSelect = document.getElementById('batch_select');
+
+    if (warehouseSelect.value) {
+        warehouseCode.value = warehouseSelect.value;
+        warehouseCode.style.display = 'none';
+        warehouseSelect.parentElement.style.display = 'flex';
+
+        // Enable bin select and load bins
+        binSelect.disabled = false;
+        batchSelect.disabled = false;
+        loadCascadingBinLocations(warehouseSelect.value);
+        loadCascadingBatches();
+    } else {
+        binSelect.disabled = true;
+        batchSelect.disabled = true;
+        binSelect.innerHTML = '<option value="">Select Bin Location...</option>';
+        batchSelect.innerHTML = '<option value="">Select Batch...</option>';
+    }
+}
+
+// Load cascading batches
+function loadCascadingBatches() {
+    const itemCode = document.getElementById('item_code').value;
+    const warehouseCode = document.getElementById('warehouse_code').value || document.getElementById('warehouse_select').value;
+
+    if (!itemCode) {
+        console.log('No item code available for batch loading');
+        return;
+    }
+
+    console.log(`Loading batches for item: ${itemCode}, warehouse: ${warehouseCode}`);
+
+    let url = `/api/get-batches?item=${itemCode}`;
+    if (warehouseCode) {
+        url += `&warehouse=${warehouseCode}`;
+    } else {
+        // If no warehouse is selected, try to use a default one
+        url += `&warehouse=WH001`;
+    }
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            console.log('Batch API response:', data);
+            const batchSelect = document.getElementById('batch_select');
+            batchSelect.innerHTML = '<option value="">Select Batch...</option>';
+
+            if (data.success && data.batches && data.batches.length > 0) {
+                data.batches.forEach(batch => {
+                    const option = document.createElement('option');
+                    option.value = batch.Batch || batch.BatchNumber;
+                    option.textContent = `${batch.Batch || batch.BatchNumber} (Qty: ${batch.Quantity || 0}, Exp: ${batch.ExpirationDate || batch.ExpiryDate || 'N/A'})`;
+                    option.setAttribute('data-expiry', batch.ExpirationDate || batch.ExpiryDate);
+                    batchSelect.appendChild(option);
+                });
+                console.log(`Loaded ${data.batches.length} batches for item ${itemCode}`);
+            } else {
+                console.log('No batches found for item:', itemCode);
+                // Add a message option to indicate no batches available
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No batches available';
+                option.disabled = true;
+                batchSelect.appendChild(option);
+            }
+            batchSelect.disabled = false;
+        })
+        .catch(error => {
+            console.error('Error loading batches:', error);
+            const batchSelect = document.getElementById('batch_select');
+            batchSelect.disabled = false;
+        });
+}
+
+// Handle batch selection
+function handleBatchSelection() {
+    const batchSelect = document.getElementById('batch_select');
+    const batchNumber = document.getElementById('batch_number');
+   // const expirationDate = document.getElementById('expiration_date');
+
+    if (batchSelect.value) {
+        batchNumber.value = batchSelect.value;
+        batchNumber.style.display = 'none';
+        batchSelect.parentElement.style.display = 'flex';
+
+        // Auto-fill expiration date from selected option
+        const selectedOption = batchSelect.options[batchSelect.selectedIndex];
+        //const expiry = selectedOption.getAttribute('data-expiry');
+
+    }
+}
+
+// Toggle manual batch entry
+function toggleManualBatch() {
+    const batchSelect = document.getElementById('batch_select');
+    const batchNumber = document.getElementById('batch_number');
+
+    if (batchNumber.style.display === 'none') {
+        batchNumber.style.display = 'block';
+        batchSelect.parentElement.style.display = 'none';
+        batchNumber.focus();
+    } else {
+        batchNumber.style.display = 'none';
+        batchSelect.parentElement.style.display = 'flex';
+        batchSelect.focus();
+    }
 }
 
 function scanBatchNumber() {
@@ -936,8 +1102,8 @@ function loadBatchNumbers() {
         return;
     }
     
-    batchSelect.innerHTML = '<option value="">Loading batches...</option>';
-    batchInfo.textContent = 'Loading available batches...';
+<!--    batchSelect.innerHTML = '<option value="">Loading batches...</option>';-->
+<!--    batchInfo.textContent = 'Loading available batches...';-->
     
     fetch(`/api/get_available_batches/${itemCode}`)
         .then(response => response.json())
@@ -968,8 +1134,8 @@ function loadBatchNumbers() {
             }
         })
         .catch(error => {
-            console.error('Error loading batches:', error);
-            batchSelect.innerHTML = '<option value="">Error loading batches</option>';
+<!--            console.error('Error loading batches:', error);-->
+<!--            batchSelect.innerHTML = '<option value="">Error loading batches</option>';-->
             batchInfo.textContent = 'Error loading batches. Check connection.';
         });
 }

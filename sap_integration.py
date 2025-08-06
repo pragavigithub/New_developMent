@@ -834,18 +834,18 @@ class SAPIntegration:
                     # For now, we'll assume stock is available (since BatchNumberDetails doesn't include stock)
                     # In a real implementation, you'd need to cross-reference with ItemWarehouseInfo
                     formatted_batch = {
-                        'BatchNumber': batch.get('Batch', ''),
+                        # 'BatchNumber': batch.get('Batch', ''),
                         'Batch': batch.get('Batch', ''),  # Alias for compatibility
-                        'ItemCode': batch.get('ItemCode', item_code),
-                        'ItemDescription': batch.get('ItemDescription', ''),
-                        'Status': batch.get('Status', ''),
-
-                        'ExpiryDate': batch.get('ExpirationDate'),
-                        'ExpirationDate': batch.get('ExpirationDate'),  # Alias
-                        'ManufacturingDate': batch.get('ManufacturingDate'),
-                        'AdmissionDate': batch.get('AdmissionDate'),
-                        'BatchAttribute1': batch.get('BatchAttribute1'),
-                        'BatchAttribute2': batch.get('BatchAttribute2'),
+                        # 'ItemCode': batch.get('ItemCode', item_code),
+                        # 'ItemDescription': batch.get('ItemDescription', ''),
+                        # 'Status': batch.get('Status', ''),
+                        #
+                        # 'ExpiryDate': batch.get('ExpirationDate'),
+                        # 'ExpirationDate': batch.get('ExpirationDate'),  # Alias
+                        # 'ManufacturingDate': batch.get('ManufacturingDate'),
+                        # 'AdmissionDate': batch.get('AdmissionDate'),
+                        # 'BatchAttribute1': batch.get('BatchAttribute1'),
+                        # 'BatchAttribute2': batch.get('BatchAttribute2'),
 
                         'SystemNumber': batch.get('SystemNumber', 0)
                     }
