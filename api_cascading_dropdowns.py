@@ -86,11 +86,11 @@ def cascading_get_bin_locations():
         return jsonify({
             'success': True,
             'bins': [
-                {'BinCode': f'{warehouse_code}-A01', 'BinName': 'Aisle A - Position 01'},
-                {'BinCode': f'{warehouse_code}-A02', 'BinName': 'Aisle A - Position 02'},
-                {'BinCode': f'{warehouse_code}-B01', 'BinName': 'Aisle B - Position 01'},
-                {'BinCode': f'{warehouse_code}-B02', 'BinName': 'Aisle B - Position 02'},
-                {'BinCode': f'{warehouse_code}-C01', 'BinName': 'Aisle C - Position 01'}
+                {'code': f'{warehouse_code}-A01', 'name': 'Aisle A - Position 01'},
+                {'code': f'{warehouse_code}-A02', 'name': 'Aisle A - Position 02'},
+                {'code': f'{warehouse_code}-B01', 'name': 'Aisle B - Position 01'},
+                {'code': f'{warehouse_code}-B02', 'name': 'Aisle B - Position 02'},
+                {'code': f'{warehouse_code}-C01', 'name': 'Aisle C - Position 01'}
             ]
         })
             
@@ -100,9 +100,62 @@ def cascading_get_bin_locations():
         return jsonify({
             'success': True,
             'bins': [
-                {'BinCode': f'{warehouse_code}-A01', 'BinName': 'Aisle A - Position 01'},
-                {'BinCode': f'{warehouse_code}-B01', 'BinName': 'Aisle B - Position 01'}
+                {'code': f'{warehouse_code}-A01', 'name': 'Aisle A - Position 01'},
+                {'code': f'{warehouse_code}-B01', 'name': 'Aisle B - Position 01'}
             ]
+        })
+
+@app.route('/api/warehouse/<warehouse_code>/validate', methods=['GET'])
+@login_required
+def validate_warehouse(warehouse_code):
+    """Validate if a warehouse exists in SAP B1"""
+    try:
+        sap = SAPIntegration()
+        
+        if sap.ensure_logged_in():
+            try:
+                # Check if warehouse exists in SAP B1
+                url = f"{sap.base_url}/b1s/v1/Warehouses('{warehouse_code}')"
+                response = sap.session.get(url, timeout=10)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    return jsonify({
+                        'success': True,
+                        'valid': True,
+                        'warehouse': {
+                            'code': data.get('WarehouseCode'),
+                            'name': data.get('WarehouseName')
+                        }
+                    })
+                else:
+                    return jsonify({
+                        'success': True,
+                        'valid': False,
+                        'error': f'Warehouse {warehouse_code} not found in SAP B1'
+                    })
+            except Exception as e:
+                logging.error(f"Error validating warehouse {warehouse_code}: {str(e)}")
+                
+        # Return valid for offline mode or when SAP is not available
+        return jsonify({
+            'success': True,
+            'valid': True,
+            'warehouse': {
+                'code': warehouse_code,
+                'name': f'Warehouse {warehouse_code}'
+            }
+        })
+        
+    except Exception as e:
+        logging.error(f"Error in validate_warehouse API: {str(e)}")
+        return jsonify({
+            'success': True,
+            'valid': True,
+            'warehouse': {
+                'code': warehouse_code,
+                'name': f'Warehouse {warehouse_code}'
+            }
         })
 
 @app.route('/api/batches', methods=['GET'])

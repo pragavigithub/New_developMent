@@ -300,22 +300,72 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="from_warehouse_code" class="form-label">From Warehouse <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="from_warehouse_code" name="from_warehouse_code" value="{{ transfer.from_warehouse or '' }}" readonly>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('from')">
-                                        <i data-feather="camera"></i> Scan
-                                    </button>
+                                <div class="mb-2">
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="from_warehouse_mode" id="from_warehouse_dropdown" value="dropdown" checked onclick="toggleWarehouseMode('from', 'dropdown')">
+                                        <label class="btn btn-outline-primary btn-sm" for="from_warehouse_dropdown">
+                                            <i data-feather="list"></i> Select
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="from_warehouse_mode" id="from_warehouse_manual" value="manual" onclick="toggleWarehouseMode('from', 'manual')">
+                                        <label class="btn btn-outline-secondary btn-sm" for="from_warehouse_manual">
+                                            <i data-feather="edit-3"></i> Manual
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Warehouse Dropdown -->
+                                <div id="from_warehouse_dropdown_container">
+                                    <select class="form-select" id="from_warehouse_select" name="from_warehouse_code" onchange="handleWarehouseSelection('from')" required>
+                                        <option value="">Select warehouse...</option>
+                                        <option value="{{ transfer.from_warehouse or '' }}" selected>{{ transfer.from_warehouse or 'Loading...' }}</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Manual Warehouse Entry -->
+                                <div id="from_warehouse_manual_container" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="from_warehouse_input" name="from_warehouse_code" placeholder="Enter warehouse code" onblur="handleWarehouseManualEntry('from')">
+                                        <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('from')">
+                                            <i data-feather="camera"></i> Scan
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="to_warehouse_code" class="form-label">To Warehouse <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="to_warehouse_code" name="to_warehouse_code" value="{{ transfer.to_warehouse or '' }}" readonly>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('to')">
-                                        <i data-feather="camera"></i> Scan
-                                    </button>
+                                <div class="mb-2">
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="to_warehouse_mode" id="to_warehouse_dropdown" value="dropdown" checked onclick="toggleWarehouseMode('to', 'dropdown')">
+                                        <label class="btn btn-outline-primary btn-sm" for="to_warehouse_dropdown">
+                                            <i data-feather="list"></i> Select
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="to_warehouse_mode" id="to_warehouse_manual" value="manual" onclick="toggleWarehouseMode('to', 'manual')">
+                                        <label class="btn btn-outline-secondary btn-sm" for="to_warehouse_manual">
+                                            <i data-feather="edit-3"></i> Manual
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Warehouse Dropdown -->
+                                <div id="to_warehouse_dropdown_container">
+                                    <select class="form-select" id="to_warehouse_select" name="to_warehouse_code" onchange="handleWarehouseSelection('to')" required>
+                                        <option value="">Select warehouse...</option>
+                                        <option value="{{ transfer.to_warehouse or '' }}" selected>{{ transfer.to_warehouse or 'Loading...' }}</option>
+                                    </select>
+                                </div>
+                                
+                                <!-- Manual Warehouse Entry -->
+                                <div id="to_warehouse_manual_container" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="to_warehouse_input" name="to_warehouse_code" placeholder="Enter warehouse code" onblur="handleWarehouseManualEntry('to')">
+                                        <button type="button" class="btn btn-outline-primary" onclick="scanWarehouse('to')">
+                                            <i data-feather="camera"></i> Scan
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -324,22 +374,74 @@
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="from_bin" class="form-label">From Bin Location <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="from_bin" name="from_bin" required>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanBin('from')">
-                                        <i data-feather="camera"></i> Scan
-                                    </button>
+                                <div class="mb-2">
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="from_bin_mode" id="from_bin_dropdown" value="dropdown" checked onclick="toggleBinMode('from', 'dropdown')">
+                                        <label class="btn btn-outline-primary btn-sm" for="from_bin_dropdown">
+                                            <i data-feather="list"></i> Select
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="from_bin_mode" id="from_bin_manual" value="manual" onclick="toggleBinMode('from', 'manual')">
+                                        <label class="btn btn-outline-secondary btn-sm" for="from_bin_manual">
+                                            <i data-feather="edit-3"></i> Manual
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bin Dropdown -->
+                                <div id="from_bin_dropdown_container">
+                                    <select class="form-select" id="from_bin_select" name="from_bin" onchange="handleBinSelection('from')" required>
+                                        <option value="">Select warehouse first...</option>
+                                    </select>
+                                    <small class="text-muted" id="from_bin_info">Available bins will load when warehouse is selected</small>
+                                </div>
+                                
+                                <!-- Manual Bin Entry -->
+                                <div id="from_bin_manual_container" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="from_bin_input" name="from_bin" placeholder="Enter bin location" required>
+                                        <button type="button" class="btn btn-outline-primary" onclick="scanBin('from')">
+                                            <i data-feather="camera"></i> Scan
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Enter bin location manually or scan barcode</small>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="to_bin" class="form-label">To Bin Location <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="to_bin" name="to_bin" required>
-                                    <button type="button" class="btn btn-outline-primary" onclick="scanBin('to')">
-                                        <i data-feather="camera"></i> Scan
-                                    </button>
+                                <div class="mb-2">
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="to_bin_mode" id="to_bin_dropdown" value="dropdown" checked onclick="toggleBinMode('to', 'dropdown')">
+                                        <label class="btn btn-outline-primary btn-sm" for="to_bin_dropdown">
+                                            <i data-feather="list"></i> Select
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="to_bin_mode" id="to_bin_manual" value="manual" onclick="toggleBinMode('to', 'manual')">
+                                        <label class="btn btn-outline-secondary btn-sm" for="to_bin_manual">
+                                            <i data-feather="edit-3"></i> Manual
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- Bin Dropdown -->
+                                <div id="to_bin_dropdown_container">
+                                    <select class="form-select" id="to_bin_select" name="to_bin" onchange="handleBinSelection('to')" required>
+                                        <option value="">Select warehouse first...</option>
+                                    </select>
+                                    <small class="text-muted" id="to_bin_info">Available bins will load when warehouse is selected</small>
+                                </div>
+                                
+                                <!-- Manual Bin Entry -->
+                                <div id="to_bin_manual_container" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="to_bin_input" name="to_bin" placeholder="Enter bin location" required>
+                                        <button type="button" class="btn btn-outline-primary" onclick="scanBin('to')">
+                                            <i data-feather="camera"></i> Scan
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">Enter bin location manually or scan barcode</small>
                                 </div>
                             </div>
                         </div>
@@ -442,7 +544,24 @@ function showAddItemModal() {
     document.getElementById('batch_select').disabled = true;
 
     // Load initial data
-
+    loadWarehouses('from');
+    loadWarehouses('to');
+    
+    // Set default warehouse values if they exist
+    const fromWarehouse = '{{ transfer.from_warehouse or "" }}';
+    const toWarehouse = '{{ transfer.to_warehouse or "" }}';
+    
+    setTimeout(() => {
+        if (fromWarehouse) {
+            document.getElementById('from_warehouse_select').value = fromWarehouse;
+            loadBinLocations('from', fromWarehouse);
+        }
+        
+        if (toWarehouse) {
+            document.getElementById('to_warehouse_select').value = toWarehouse;
+            loadBinLocations('to', toWarehouse);
+        }
+    }, 500); // Small delay to ensure warehouses are loaded first
 
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('addItemModal'));
@@ -1429,6 +1548,221 @@ function debounce(func, wait) {
         clearTimeout(timeout);
         timeout = setTimeout(later, wait);
     };
+}
+
+// Warehouse mode toggle functions
+function toggleWarehouseMode(direction, mode) {
+    const dropdownContainer = document.getElementById(`${direction}_warehouse_dropdown_container`);
+    const manualContainer = document.getElementById(`${direction}_warehouse_manual_container`);
+    
+    if (mode === 'dropdown') {
+        dropdownContainer.style.display = 'block';
+        manualContainer.style.display = 'none';
+        
+        // Load warehouses if not already loaded
+        loadWarehouses(direction);
+    } else {
+        dropdownContainer.style.display = 'none';
+        manualContainer.style.display = 'block';
+        
+        // Clear any selected warehouse
+        document.getElementById(`${direction}_warehouse_input`).value = '';
+    }
+    
+    // Clear bin locations when warehouse mode changes
+    clearBinLocations(direction);
+}
+
+// Load available warehouses from SAP B1
+function loadWarehouses(direction) {
+    const select = document.getElementById(`${direction}_warehouse_select`);
+    
+    // Show loading state
+    select.innerHTML = '<option value="">Loading warehouses...</option>';
+    
+    fetch('/api/warehouses')
+        .then(response => response.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Select warehouse...</option>';
+            
+            if (data.success && data.warehouses) {
+                data.warehouses.forEach(warehouse => {
+                    const option = document.createElement('option');
+                    option.value = warehouse.code;
+                    option.textContent = `${warehouse.code} - ${warehouse.name}`;
+                    
+                    // Select default if it matches the transfer's warehouse
+                    const transferWarehouse = direction === 'from' ? '{{ transfer.from_warehouse }}' : '{{ transfer.to_warehouse }}';
+                    if (warehouse.code === transferWarehouse) {
+                        option.selected = true;
+                    }
+                    
+                    select.appendChild(option);
+                });
+                
+                // Load bin locations for selected warehouse
+                if (select.value) {
+                    loadBinLocations(direction, select.value);
+                }
+            } else {
+                select.innerHTML = '<option value="">No warehouses available</option>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading warehouses:', error);
+            select.innerHTML = '<option value="">Error loading warehouses</option>';
+        });
+}
+
+// Handle warehouse selection from dropdown
+function handleWarehouseSelection(direction) {
+    const select = document.getElementById(`${direction}_warehouse_select`);
+    const warehouseCode = select.value;
+    
+    if (warehouseCode) {
+        loadBinLocations(direction, warehouseCode);
+    } else {
+        clearBinLocations(direction);
+    }
+}
+
+// Handle manual warehouse entry
+function handleWarehouseManualEntry(direction) {
+    const input = document.getElementById(`${direction}_warehouse_input`);
+    const warehouseCode = input.value.trim();
+    
+    if (warehouseCode) {
+        // Validate warehouse exists and load bins
+        validateAndLoadBins(direction, warehouseCode);
+    } else {
+        clearBinLocations(direction);
+    }
+}
+
+// Validate warehouse and load bin locations
+function validateAndLoadBins(direction, warehouseCode) {
+    fetch(`/api/warehouse/${warehouseCode}/validate`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.valid) {
+                loadBinLocations(direction, warehouseCode);
+            } else {
+                // Show warning but allow user to continue
+                const infoElement = document.getElementById(`${direction}_bin_info`);
+                if (infoElement) {
+                    infoElement.innerHTML = '<span class="text-warning">Warehouse not found in SAP B1. Bins may not load.</span>';
+                }
+                clearBinLocations(direction);
+            }
+        })
+        .catch(error => {
+            console.error('Error validating warehouse:', error);
+            clearBinLocations(direction);
+        });
+}
+
+// Bin mode toggle functions
+function toggleBinMode(direction, mode) {
+    const dropdownContainer = document.getElementById(`${direction}_bin_dropdown_container`);
+    const manualContainer = document.getElementById(`${direction}_bin_manual_container`);
+    
+    if (mode === 'dropdown') {
+        dropdownContainer.style.display = 'block';
+        manualContainer.style.display = 'none';
+        
+        // Load bins if warehouse is selected
+        const warehouseCode = getSelectedWarehouse(direction);
+        if (warehouseCode) {
+            loadBinLocations(direction, warehouseCode);
+        }
+    } else {
+        dropdownContainer.style.display = 'none';
+        manualContainer.style.display = 'block';
+        
+        // Clear manual input
+        document.getElementById(`${direction}_bin_input`).value = '';
+    }
+}
+
+// Get currently selected warehouse code
+function getSelectedWarehouse(direction) {
+    const dropdownMode = document.getElementById(`${direction}_warehouse_dropdown`).checked;
+    
+    if (dropdownMode) {
+        return document.getElementById(`${direction}_warehouse_select`).value;
+    } else {
+        return document.getElementById(`${direction}_warehouse_input`).value.trim();
+    }
+}
+
+// Load bin locations for a warehouse
+function loadBinLocations(direction, warehouseCode) {
+    const select = document.getElementById(`${direction}_bin_select`);
+    const infoElement = document.getElementById(`${direction}_bin_info`);
+    
+    // Show loading state
+    select.innerHTML = '<option value="">Loading bin locations...</option>';
+    select.disabled = false;
+    
+    if (infoElement) {
+        infoElement.innerHTML = 'Loading available bin locations...';
+    }
+    
+    fetch(`/api/bin-locations?warehouse=${encodeURIComponent(warehouseCode)}`)
+        .then(response => response.json())
+        .then(data => {
+            select.innerHTML = '<option value="">Select bin location...</option>';
+            
+            if (data.success && data.bins && data.bins.length > 0) {
+                data.bins.forEach(bin => {
+                    const option = document.createElement('option');
+                    option.value = bin.code;
+                    option.textContent = bin.code + (bin.name ? ` - ${bin.name}` : '');
+                    select.appendChild(option);
+                });
+                
+                if (infoElement) {
+                    infoElement.innerHTML = `Found ${data.bins.length} available bin location(s)`;
+                }
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No bin locations found';
+                select.appendChild(option);
+                
+                if (infoElement) {
+                    infoElement.innerHTML = 'No bin locations found for this warehouse';
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading bin locations:', error);
+            select.innerHTML = '<option value="">Error loading bin locations</option>';
+            
+            if (infoElement) {
+                infoElement.innerHTML = 'Error loading bin locations';
+            }
+        });
+}
+
+// Clear bin locations
+function clearBinLocations(direction) {
+    const select = document.getElementById(`${direction}_bin_select`);
+    const infoElement = document.getElementById(`${direction}_bin_info`);
+    
+    select.innerHTML = '<option value="">Select warehouse first...</option>';
+    select.disabled = true;
+    
+    if (infoElement) {
+        infoElement.innerHTML = 'Available bins will load when warehouse is selected';
+    }
+}
+
+// Handle bin selection
+function handleBinSelection(direction) {
+    // Optional: Add any validation or additional logic when bin is selected
+    const select = document.getElementById(`${direction}_bin_select`);
+    console.log(`${direction} bin selected:`, select.value);
 }
 </script>
 {% endblock %}
