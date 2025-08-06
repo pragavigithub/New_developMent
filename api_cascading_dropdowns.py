@@ -24,22 +24,32 @@ def cascading_get_warehouses():
                 if response.status_code == 200:
                     data = response.json()
                     warehouses = data.get('value', [])
-                    logging.info(f"Retrieved {len(warehouses)} warehouses from SAP B1")
+                    
+                    # Transform SAP B1 warehouse data to frontend format
+                    formatted_warehouses = []
+                    for warehouse in warehouses:
+                        formatted_warehouses.append({
+                            'code': warehouse.get('WarehouseCode'),
+                            'name': warehouse.get('WarehouseName', warehouse.get('WarehouseCode'))
+                        })
+                    
+                    logging.info(f"Retrieved {len(formatted_warehouses)} warehouses from SAP B1")
                     return jsonify({
                         'success': True,
-                        'warehouses': warehouses
+                        'warehouses': formatted_warehouses
                     })
             except Exception as e:
                 logging.error(f"Error getting warehouses from SAP: {str(e)}")
         
-        # Return mock data for offline mode or on error
+        # Return mock data for offline mode or on error  
         return jsonify({
             'success': True,
             'warehouses': [
-                {'WarehouseCode': 'WH001', 'WarehouseName': 'Main Warehouse'},
-                {'WarehouseCode': 'WH002', 'WarehouseName': 'Secondary Warehouse'},
-                {'WarehouseCode': 'WH003', 'WarehouseName': 'Finished Goods'},
-                {'WarehouseCode': 'WH004', 'WarehouseName': 'Raw Materials'}
+                {'code': 'SCP_AVS', 'name': 'SCP Aviation Services'},
+                {'code': '7000-FG', 'name': 'Finished Goods Warehouse'},
+                {'code': 'WH-RM', 'name': 'Raw Materials Warehouse'},
+                {'code': 'WH-QC', 'name': 'Quality Control Warehouse'},
+                {'code': 'WH-RJ', 'name': 'Rejected Items Warehouse'}
             ]
         })
             
@@ -49,8 +59,8 @@ def cascading_get_warehouses():
         return jsonify({
             'success': True,
             'warehouses': [
-                {'WarehouseCode': 'WH001', 'WarehouseName': 'Main Warehouse'},
-                {'WarehouseCode': 'WH002', 'WarehouseName': 'Secondary Warehouse'}
+                {'code': 'SCP_AVS', 'name': 'SCP Aviation Services'},
+                {'code': '7000-FG', 'name': 'Finished Goods Warehouse'}
             ]
         })
 
@@ -74,10 +84,19 @@ def cascading_get_bin_locations():
                 if response.status_code == 200:
                     data = response.json()
                     bins = data.get('value', [])
-                    logging.info(f"Retrieved {len(bins)} bin locations for warehouse {warehouse_code}")
+                    
+                    # Transform SAP B1 bin data to frontend format
+                    formatted_bins = []
+                    for bin_location in bins:
+                        formatted_bins.append({
+                            'code': bin_location.get('BinCode'),
+                            'name': bin_location.get('BinName', bin_location.get('BinCode'))
+                        })
+                    
+                    logging.info(f"Retrieved {len(formatted_bins)} bin locations for warehouse {warehouse_code}")
                     return jsonify({
                         'success': True,
-                        'bins': bins
+                        'bins': formatted_bins
                     })
             except Exception as e:
                 logging.error(f"Error getting bin locations from SAP: {str(e)}")

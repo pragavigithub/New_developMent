@@ -654,7 +654,7 @@ function loadItemBatches() {
     
     // Get warehouse for filtering if available
     const fromWarehouse = document.getElementById('from_warehouse_code').value;
-    let url = `/api/get_available_batches/${encodeURIComponent(itemCode)}`;
+    let url = `/api/batches?item_code=${encodeURIComponent(itemCode)}`;
 <!--    if (fromWarehouse) {-->
 <!--        url += `?from_warehouse=${encodeURIComponent(fromWarehouse)}`;-->
 <!--    }-->
@@ -1407,7 +1407,7 @@ function loadBatchNumbers() {
 <!--    batchSelect.innerHTML = '<option value="">Loading batches...</option>';-->
 <!--    batchInfo.textContent = 'Loading available batches...';-->
     
-    fetch(`/api/get_available_batches/${itemCode}`)
+    fetch(`/api/batches?item_code=${encodeURIComponent(itemCode)}`)
         .then(response => response.json())
         .then(data => {
             batchSelect.innerHTML = '';
