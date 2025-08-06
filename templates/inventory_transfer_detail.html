@@ -548,6 +548,72 @@ function handleWarehouseSelection() {
     }
 }
 
+// CASCADING DROPDOWN SYSTEM
+
+// Load bin locations based on warehouse
+function loadBinLocations() {
+    const fromWarehouse = document.getElementById('from_warehouse_code').value;
+    const toWarehouse = document.getElementById('to_warehouse_code').value;
+    
+    console.log('Loading bins - From warehouse:', fromWarehouse, 'To warehouse:', toWarehouse);
+    
+    if (fromWarehouse) {
+        loadBinsForWarehouse(fromWarehouse, 'from_bin_select');
+    }
+    if (toWarehouse) {
+        loadBinsForWarehouse(toWarehouse, 'to_bin_select');
+    }
+}
+
+function loadBinsForWarehouse(warehouseCode, targetSelectId) {
+    const binSelect = document.getElementById(targetSelectId);
+    if (!binSelect) {
+        console.log(`Bin select with ID ${targetSelectId} not found`);
+        return;
+    }
+    
+    binSelect.innerHTML = '<option value="">Loading bins...</option>';
+    
+    fetch(`/api/bin-locations?warehouse=${encodeURIComponent(warehouseCode)}`)
+        .then(response => response.json())
+        .then(data => {
+            console.log(`Bins for ${warehouseCode}:`, data);
+            binSelect.innerHTML = '';
+            
+            if (data.success && data.bins && data.bins.length > 0) {
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = 'Select bin location...';
+                binSelect.appendChild(defaultOption);
+                
+                // Add bin locations
+                data.bins.forEach(bin => {
+                    const option = document.createElement('option');
+                    option.value = bin.code;
+                    option.textContent = `${bin.code}${bin.name && bin.name !== bin.code ? ' - ' + bin.name : ''}`;
+                    binSelect.appendChild(option);
+                });
+                
+                console.log(`Loaded ${data.bins.length} bins for ${warehouseCode}`);
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No bins available';
+                binSelect.appendChild(option);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading bins:', error);
+            binSelect.innerHTML = '<option value="">Error loading bins</option>';
+        });
+}
+
+// Load bins when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    loadBinLocations();
+});
+
 // NEW ENHANCED BATCH SELECTION SYSTEM
 
 // Toggle between batch dropdown and manual entry modes
@@ -617,8 +683,9 @@ function loadItemBatches() {
                 // Add available batches
                 data.batches.forEach(batch => {
                     const option = document.createElement('option');
-                    option.value = batch.BatchNumber;
-                    option.textContent = `${batch.BatchNumber}`;
+                    const batchNumber = batch.BatchNumber || batch.Batch;
+                    option.value = batchNumber;
+                    option.textContent = batchNumber;
                     
                     // Add additional info if available
                     const info = [];

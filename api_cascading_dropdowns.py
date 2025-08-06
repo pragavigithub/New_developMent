@@ -85,13 +85,19 @@ def cascading_get_bin_locations():
                     data = response.json()
                     bins = data.get('value', [])
                     
-                    # Transform SAP B1 bin data to frontend format
+                    # Transform SAP B1 bin data to frontend format using correct field names
                     formatted_bins = []
                     for bin_location in bins:
-                        formatted_bins.append({
-                            'code': bin_location.get('BinCode'),
-                            'name': bin_location.get('BinName', bin_location.get('BinCode'))
-                        })
+                        bin_code = bin_location.get('BinCode')
+                        description = bin_location.get('Description') or bin_location.get('Sublevel1', '')
+                        
+                        if bin_code:
+                            formatted_bins.append({
+                                'code': bin_code,
+                                'name': description or bin_code,
+                                'warehouse': bin_location.get('Warehouse'),
+                                'inactive': bin_location.get('Inactive', 'tNO')
+                            })
                     
                     logging.info(f"Retrieved {len(formatted_bins)} bin locations for warehouse {warehouse_code}")
                     return jsonify({
@@ -101,15 +107,15 @@ def cascading_get_bin_locations():
             except Exception as e:
                 logging.error(f"Error getting bin locations from SAP: {str(e)}")
         
-        # Return mock data for offline mode or on error
+        # Return realistic mock data based on your SAP B1 structure
+        logging.warning(f"Using mock bin data for warehouse {warehouse_code}")
         return jsonify({
             'success': True,
             'bins': [
-                {'code': f'{warehouse_code}-A01', 'name': 'Aisle A - Position 01'},
-                {'code': f'{warehouse_code}-A02', 'name': 'Aisle A - Position 02'},
-                {'code': f'{warehouse_code}-B01', 'name': 'Aisle B - Position 01'},
-                {'code': f'{warehouse_code}-B02', 'name': 'Aisle B - Position 02'},
-                {'code': f'{warehouse_code}-C01', 'name': 'Aisle C - Position 01'}
+                {'code': f'{warehouse_code}-SYSTEM-BIN-LOCATION', 'name': 'System Bin Location'},
+                {'code': f'{warehouse_code}-A103', 'name': 'A103'},
+                {'code': f'{warehouse_code}-A71', 'name': 'A71'},
+                {'code': f'{warehouse_code}-J-830', 'name': 'J-830'}
             ]
         })
             
