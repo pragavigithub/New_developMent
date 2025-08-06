@@ -54,6 +54,13 @@ A comprehensive warehouse management system with SAP B1 integration, built with 
 - **Integration Focus**: SAP B1 integration with batch management and warehouse operations
 
 ## Recent Changes
+- **2025-08-06**: Successfully migrated from Replit Agent to standard Replit environment
+- **2025-08-06**: Enhanced Inventory Transfer batch selection with dual-mode system:
+  - Added radio button toggle between dropdown selection and manual entry
+  - Dropdown shows all available batches for selected ItemCode with quantity and expiry info
+  - Manual entry mode allows typing or scanning batch numbers
+  - Real-time batch validation with SAP B1 integration
+  - Enhanced UI with proper error handling and user feedback
 - **2025-08-05**: Successfully migrated from Replit Agent to standard Replit environment
 - **2025-08-05**: Enhanced Inventory Transfer Add screen with batch dropdown functionality
 - **2025-08-05**: Added manual batch entry option alongside batch dropdown selection
