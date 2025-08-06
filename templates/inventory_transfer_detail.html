@@ -346,7 +346,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="batch_number" class="form-label">Batch Number</label>
+                        <label for="batch_select" class="form-label">Batch Number</label>
                         <div class="mb-2">
                             <div class="btn-group w-100" role="group">
                                 <input type="radio" class="btn-check" name="batch_selection_mode" id="batch_dropdown_mode" value="dropdown" checked onclick="toggleBatchMode('dropdown')">
@@ -536,9 +536,9 @@ function loadItemBatches() {
     // Get warehouse for filtering if available
     const fromWarehouse = document.getElementById('from_warehouse_code').value;
     let url = `/api/get_available_batches/${encodeURIComponent(itemCode)}`;
-    if (fromWarehouse) {
-        url += `?from_warehouse=${encodeURIComponent(fromWarehouse)}`;
-    }
+<!--    if (fromWarehouse) {-->
+<!--        url += `?from_warehouse=${encodeURIComponent(fromWarehouse)}`;-->
+<!--    }-->
     
     fetch(url)
         .then(response => response.json())
@@ -562,9 +562,9 @@ function loadItemBatches() {
                     // Add additional info if available
                     const info = [];
                     if (batch.Quantity !== undefined) info.push(`Qty: ${batch.Quantity}`);
-                    if (batch.ExpiryDate) info.push(`Exp: ${new Date(batch.ExpiryDate).toLocaleDateString()}`);
-                    if (batch.ManufacturingDate) info.push(`Mfg: ${new Date(batch.ManufacturingDate).toLocaleDateString()}`);
-                    
+<!--                    if (batch.ExpiryDate) info.push(`Exp: ${new Date(batch.ExpiryDate).toLocaleDateString()}`);-->
+<!--                    if (batch.ManufacturingDate) info.push(`Mfg: ${new Date(batch.ManufacturingDate).toLocaleDateString()}`);-->
+<!--                    -->
                     if (info.length > 0) {
                         option.textContent += ` (${info.join(', ')})`;
                     }

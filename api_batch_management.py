@@ -14,7 +14,7 @@ import logging
 @app.route('/api/get_available_batches/<item_code>')
 def get_available_batches(item_code):
     try:
-        from_warehouse = request.args.get('from_warehouse', '')
+        # from_warehouse = request.args.get('from_warehouse', '')
         from sap_integration import SAPIntegration
         sap = SAPIntegration()
         batches = sap.get_item_batches(item_code)
@@ -22,10 +22,10 @@ def get_available_batches(item_code):
         if batches:
             for batch in batches:
                 available_batches.append({
-                    'BatchNumber': batch.get('BatchNumber', batch.get('Batch', '')),
+                    'BatchNumber': batch.get('Batch', batch.get('Batch', '')),
 
-                    'ExpiryDate': batch.get('ExpirationDate', ''),
-                    'ManufacturingDate': batch.get('ManufacturingDate', ''),
+                    # 'ExpiryDate': batch.get('ExpirationDate', ''),
+                    # 'ManufacturingDate': batch.get('ManufacturingDate', ''),
                 })
         return jsonify(success=True, batches=available_batches)
     except Exception as e:
